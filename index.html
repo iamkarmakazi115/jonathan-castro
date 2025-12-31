@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- ============================================
+         JONATHAN CASTRO - HOME PAGE
+         index.html
+         
+         This is the main landing page of the website.
+         Features:
+         - Video background (background-home.mp4)
+         - Spinning navigation links
+         - Logo in top right corner
+         - Lava color theme
+         ============================================ -->
+    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Jonathan Castro - IT Professional, Author, and Creative Mind">
+    <meta name="keywords" content="Jonathan Castro, IT Professional, Author, Web Developer">
+    <meta name="author" content="Jonathan Castro">
+    
+    <!-- Favicon - Your custom favicon file -->
+    <link rel="icon" type="image/x-icon" href="KarmakazifaviconICO.ico">
+    
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <title>Jonathan Castro | Home</title>
+</head>
+<body>
+    <!-- ============================================
+         VIDEO BACKGROUND SECTION
+         
+         HOW TO USE:
+         1. Place your "background-home.mp4" file in the same folder as this HTML file
+         2. The video will automatically play, loop, and be muted
+         3. The video covers the entire screen
+         ============================================ -->
+    <div class="video-background">
+        <video autoplay muted loop playsinline>
+            <!-- Your video file goes here -->
+            <source src="background-home.mp4" type="video/mp4">
+            <!-- Fallback message if video doesn't load -->
+            Your browser does not support the video tag.
+        </video>
+    </div>
+    
+    <!-- Dark overlay for better text readability -->
+    <div class="video-overlay"></div>
+    
+    <!-- ============================================
+         LOGO SECTION
+         
+         HOW TO USE:
+         1. Place your "KarmakaziLogo-512x512.png" file in the same folder
+         2. The logo will appear in the top right corner
+         3. It links back to the home page
+         ============================================ -->
+    <a href="index.html" class="site-logo">
+        <img src="KarmakaziLogo-512x512.png" alt="Karmakazi Logo">
+    </a>
+    
+    <!-- ============================================
+         MAIN CONTENT - NAVIGATION
+         
+         The navigation links are vertically centered and have a spinning animation.
+         Each link leads to a different page of your website.
+         ============================================ -->
+    <main class="main-content">
+        <nav class="home-nav">
+            <!-- 
+                NAVIGATION LINKS
+                The spinning effect is applied via CSS.
+                Each link has a staggered animation delay for visual interest.
+            -->
+            <a href="manuscripts.html" class="nav-link">MANUSCRIPTS</a>
+            <a href="sandbox.html" class="nav-link">SANDBOX</a>
+            <a href="about.html" class="nav-link">ABOUT ME</a>
+        </nav>
+    </main>
+
+    <!-- ============================================
+         OPTIONAL: JavaScript for Enhanced Interactions
+         
+         This script adds extra hover effects to the navigation.
+         You can remove this section if you only want the CSS animations.
+         ============================================ -->
+    <script>
+        // Add event listeners to navigation links for enhanced interactivity
+        document.querySelectorAll('.nav-link').forEach(link => {
+            // When mouse enters a link
+            link.addEventListener('mouseenter', function() {
+                // Pause the automatic spin animation on hover
+                this.style.animationPlayState = 'paused';
+            });
+            
+            // When mouse leaves a link
+            link.addEventListener('mouseleave', function() {
+                // Resume the automatic spin animation
+                this.style.animationPlayState = 'running';
+            });
+        });
+        
+        // Console message for debugging
+        console.log('Jonathan Castro Website - Home Page Loaded Successfully');
+    </script>
+</body>
+</html>

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- ============================================
+         JONATHAN CASTRO - ABOUT ME PAGE
+         about.html
+         
+         This page tells visitors about YOU!
+         Features:
+         - Video background (EmbersFalling.mp4)
+         - Profile picture with wipe-away hover effect
+         - Fun, engaging bio sections
+         - Lava color theme
+         
+         IMAGE FILES NEEDED:
+         1. PicOfJonathanCastro.png - Your main profile picture
+         2. PicOfJonathanCastro2.png - Your alternate picture (revealed on hover)
+         ============================================ -->
+    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="About Jonathan Castro - IT Professional, Author, Father, and Geek Extraordinaire">
+    <meta name="author" content="Jonathan Castro">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="KarmakazifaviconICO.ico">
+    
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <title>Jonathan Castro | About Me</title>
+</head>
+<body>
+    <!-- ============================================
+         VIDEO BACKGROUND SECTION
+         ============================================ -->
+    <div class="video-background">
+        <video autoplay muted loop playsinline>
+            <source src="EmbersFalling.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+    
+    <!-- Dark overlay -->
+    <div class="video-overlay"></div>
+    
+    <!-- Logo (Top Right) -->
+    <a href="index.html" class="site-logo">
+        <img src="KarmakaziLogo-512x512.png" alt="Karmakazi Logo">
+    </a>
+    
+    <!-- Back to Home Link -->
+    <a href="index.html" class="back-link">← Back to Home</a>
+    
+    <!-- ============================================
+         MAIN CONTENT - ABOUT ME
+         ============================================ -->
+    <main class="main-content">
+        <!-- Page Header -->
+        <header class="page-header">
+            <h1 class="page-title">ABOUT ME</h1>
+            <p class="page-subtitle">The Man Behind the Keyboard</p>
+        </header>
+        
+        <!-- About Container -->
+        <div class="about-container">
+            
+            <!-- ========================================
+                 PROFILE PICTURE SECTION
+                 
+                 HOW THE WIPE EFFECT WORKS:
+                 - Two images are stacked on top of each other
+                 - The main image (PicOfJonathanCastro.png) is on top
+                 - When you hover, the main image "wipes away" using CSS clip-path
+                 - This reveals the second image (PicOfJonathanCastro2.png) underneath
+                 
+                 TO CHANGE YOUR PICTURES:
+                 1. Replace "PicOfJonathanCastro.png" with your main photo filename
+                 2. Replace "PicOfJonathanCastro2.png" with your alternate photo filename
+                 ======================================== -->
+            <div class="profile-picture-container">
+                <!-- Hover/Alternate picture (underneath) -->
+                <img 
+                    src="PicOfJonathanCastro2.png" 
+                    alt="Jonathan Castro - Alternate" 
+                    class="profile-pic-hover"
+                >
+                <!-- Main picture (on top, wipes away on hover) -->
+                <img 
+                    src="PicOfJonathanCastro.png" 
+                    alt="Jonathan Castro" 
+                    class="profile-pic-main"
+                >
+            </div>
+            
+            <!-- ========================================
+                 MAIN BIO SECTION
+                 Edit this to personalize your introduction!
+                 ======================================== -->
+            <div class="about-bio">
+                <p>
+                    👋 <span class="highlight">Hey there!</span> I'm <span class="highlight">Jonathan Castro</span>, 
+                    and welcome to my little corner of the internet! By day, I'm an 
+                    <span class="highlight">IT warrior</span> who's been battling bugs, taming servers, 
+                    and turning "have you tried turning it off and on again?" into an art form for 
+                    <span class="highlight">over a decade</span>. But that's just one side of me...
+                </p>
+            </div>
+            
+            <!-- ========================================
+                 ABOUT CARDS - Different aspects of your life
+                 Each card highlights a different part of who you are
+                 ======================================== -->
+            <div class="about-content">
+                
+                <!-- Card 1: IT Professional -->
+                <div class="about-card">
+                    <h3><span class="about-icon">💻</span> Tech Wizard</h3>
+                    <p>
+                        With <strong>10+ years in IT</strong>, I've seen the digital landscape evolve 
+                        from dial-up nightmares to cloud computing dreams. I solve problems, 
+                        build systems, and occasionally perform what users call "magic" 
+                        (it's usually just Ctrl+Alt+Delete, but don't tell them that 🤫).
+                    </p>
+                </div>
+                
+                <!-- Card 2: Father -->
+                <div class="about-card">
+                    <h3><span class="about-icon">👨‍👧‍👦</span> Proud Dad</h3>
+                    <p>
+                        My greatest achievement isn't any code I've written or system I've built — 
+                        it's being a <strong>father</strong>. Nothing beats coming home to tiny humans 
+                        who think you're a superhero (even when you're just trying to remember 
+                        where you left your coffee). Family is everything! ❤️
+                    </p>
+                </div>
+                
+                <!-- Card 3: Author -->
+                <div class="about-card">
+                    <h3><span class="about-icon">📚</span> Storyteller</h3>
+                    <p>
+                        When I'm not debugging code, I'm crafting worlds with words. I'm currently 
+                        working on <strong>10 books</strong> (yes, TEN!). From epic fantasies to 
+                        thrilling adventures, my imagination runs wild. Check out my 
+                        <a href="manuscripts.html" style="color: #FFD700;">Manuscripts page</a> 
+                        to see what's brewing!
+                    </p>
+                </div>
+                
+                <!-- Card 4: Anime & Manga Fan -->
+                <div class="about-card">
+                    <h3><span class="about-icon">🎌</span> Anime & Manga Enthusiast</h3>
+                    <p>
+                        <em>"Believe it!"</em> — and many other catchphrases have shaped my life. 
+                        From <strong>Naruto</strong> to <strong>One Piece</strong>, from 
+                        <strong>Attack on Titan</strong> to <strong>My Hero Academia</strong>, 
+                        anime and manga aren't just entertainment — they're a lifestyle. 
+                        Always ready to discuss the best arcs and debate power levels! ⚡
+                    </p>
+                </div>
+                
+                <!-- Card 5: TTRPG Player -->
+                <div class="about-card">
+                    <h3><span class="about-icon">🎲</span> Dice Roller Extraordinaire</h3>
+                    <p>
+                        <em>"Roll for initiative!"</em> I'm a passionate <strong>tabletop RPG</strong> 
+                        player who loves <strong>Dungeons & Dragons</strong> and <strong>Pathfinder</strong>. 
+                        There's nothing quite like gathering around a table (or virtual tabletop) 
+                        with friends, creating epic stories, and watching a natural 20 save the day! 
+                        🐉 Critical hits only, please!
+                    </p>
+                </div>
+                
+                <!-- Card 6: Fun Facts -->
+                <div class="about-card">
+                    <h3><span class="about-icon">🔥</span> Quick Facts</h3>
+                    <p>
+                        <strong>☕ Fuel:</strong> Coffee (lots of it)<br>
+                        <strong>🎮 Side Quest:</strong> Gaming when time allows<br>
+                        <strong>📍 Mission:</strong> Building cool things<br>
+                        <strong>🌟 Philosophy:</strong> "Every bug is just an undocumented feature"
+                    </p>
+                </div>
+                
+            </div>
+            
+            <!-- ========================================
+                 CLOSING STATEMENT
+                 ======================================== -->
+            <div class="about-bio" style="margin-top: 40px;">
+                <p>
+                    Thanks for stopping by! Whether you're here for the tech talk, the stories, 
+                    or just to see what this corner of the web is about, I'm glad you made it. 
+                    Feel free to explore, and remember — <span class="highlight">the adventure is just beginning!</span> 🚀
+                </p>
+            </div>
+            
+        </div>
+    </main>
+
+    <!-- JavaScript for entrance animations -->
+    <script>
+        // Animate cards on scroll
+        const aboutCards = document.querySelectorAll('.about-card');
+        
+        const observerOptions = {
+            threshold: 0.2,
+            rootMargin: '0px 0px -50px 0px'
+        };
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+        
+        // Set initial state and observe
+        aboutCards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(30px)';
+            card.style.transition = `all 0.6s ease ${index * 0.15}s`;
+            observer.observe(card);
+        });
+        
+        // Animate bio sections
+        const bioSections = document.querySelectorAll('.about-bio');
+        bioSections.forEach((bio, index) => {
+            bio.style.opacity = '0';
+            bio.style.transform = 'scale(0.95)';
+            bio.style.transition = 'all 0.8s ease';
+            
+            setTimeout(() => {
+                bio.style.opacity = '1';
+                bio.style.transform = 'scale(1)';
+            }, 300 + (index * 200));
+        });
+        
+        // Profile picture hover sound effect (optional - uncomment to enable)
+        /*
+        const profileContainer = document.querySelector('.profile-picture-container');
+        profileContainer.addEventListener('mouseenter', () => {
+            // You could add a sound effect here
+            console.log('Picture reveal!');
+        });
+        */
+        
+        console.log('About Page Loaded Successfully');
+    </script>
+</body>
+</html>
