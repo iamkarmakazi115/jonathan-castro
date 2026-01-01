@@ -495,7 +495,7 @@ html, body {
 
 .profile-pic-main {
     z-index: 2;
-    clip-path: circle(100% at 20% 50%);
+    clip-path: circle(100% at 50% 50%);
 }
 
 .profile-pic-hover {
@@ -503,7 +503,7 @@ html, body {
 }
 
 .profile-picture-container:hover .profile-pic-main {
-    clip-path: circle(0% at 20% 50%);
+    clip-path: circle(0% at 50% 50%);
 }
 
 /* About Content Cards */
