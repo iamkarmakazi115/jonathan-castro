@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home | Jonathan Castro</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/assets/KarmakazifaviconICO.ico">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Shared Navigation Styles -->
+    <link rel="stylesheet" href="/navigation.css">
+    
+    <!-- Page-Specific Styles -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="no-nav-padding">
+    
+    <!-- Navigation Placeholder - Filled by navigation.js -->
+    <div id="nav-placeholder"></div>
+    
+    <!-- ================================================
+         FULL-SCREEN VIDEO BACKGROUND
+         ================================================ -->
+    <section class="hero-video-section">
+        <div class="video-container">
+            <video autoplay muted loop playsinline class="hero-video">
+                <source src="/assets/EmbersFalling.mp4" type="video/mp4">
+                <!-- Fallback message if video doesn't load -->
+                Your browser does not support the video tag.
+            </video>
+            <div class="video-overlay"></div>
+        </div>
+        
+        <!-- Hero Content Overlay -->
+        <div class="hero-content">
+            <h1 class="hero-title">
+                <span class="title-line">Welcome to</span>
+                <span class="title-main">Jonathan Castro</span>
+            </h1>
+            <p class="hero-subtitle">Your tagline or description goes here</p>
+            <div class="hero-cta">
+                <a href="/custom-1/" class="btn btn-primary">Explore</a>
+                <a href="/custom-2/" class="btn btn-secondary">Learn More</a>
+            </div>
+        </div>
+        
+        <!-- Scroll Indicator -->
+        <div class="scroll-indicator">
+            <span class="scroll-text">Scroll</span>
+            <div class="scroll-arrow"></div>
+        </div>
+    </section>
+    
+    <!-- ================================================
+         MAIN CONTENT SECTION
+         ================================================ -->
+    <main class="main-content">
+        <section class="intro-section">
+            <div class="container">
+                <h2 class="section-title">About This Site</h2>
+                <p class="section-text">
+                    This is your home page content area. You can add any content you'd like here.
+                    Each page on this website has its own independent HTML, CSS, and JavaScript files,
+                    making it easy to customize each page separately.
+                </p>
+            </div>
+        </section>
+        
+        <!-- Add more sections as needed -->
+        <section class="features-section">
+            <div class="container">
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">01</div>
+                        <h3>Feature One</h3>
+                        <p>Description of your first feature or service.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">02</div>
+                        <h3>Feature Two</h3>
+                        <p>Description of your second feature or service.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">03</div>
+                        <h3>Feature Three</h3>
+                        <p>Description of your third feature or service.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <!-- ================================================
+         FOOTER
+         ================================================ -->
+    <footer class="site-footer">
+        <div class="container">
+            <p>&copy; 2025 Jonathan Castro. All rights reserved.</p>
+        </div>
+    </footer>
+    
+    <!-- Navigation Script - MUST BE INCLUDED ON EVERY PAGE -->
+    <script src="/navigation.js"></script>
+    
+    <!-- Page-Specific Scripts (if needed) -->
+    <script src="scripts.js"></script>
+</body>
+</html>
