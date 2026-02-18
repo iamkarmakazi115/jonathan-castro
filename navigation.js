@@ -45,7 +45,7 @@ const SITE_CONFIG = {
         },
         {
             id: 'custom-2',
-            label: 'Custom 2',
+            label: 'Homelab',
             href: '/custom-2/'
         },
         {
