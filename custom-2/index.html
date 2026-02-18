@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homelab Dashboard | Jonathan Castro</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/assets/KarmakazifaviconICO.ico">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
+    <!-- Shared Navigation Styles -->
+    <link rel="stylesheet" href="/navigation.css">
+    
+    <!-- Page-Specific Styles -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    
+    <!-- Navigation Placeholder - Filled by navigation.js -->
+    <div id="nav-placeholder"></div>
+
+    <!-- ================================================
+         DASHBOARD HEADER
+         ================================================ -->
+    <header class="dash-header">
+        <div class="dash-header-inner">
+            <div class="dash-title-block">
+                <div class="dash-status-dot" id="serverStatusDot"></div>
+                <div>
+                    <h1 class="dash-title">HOMELAB DASHBOARD</h1>
+                    <p class="dash-subtitle">jonathan-castrodb &mdash; Debian 13 Server Monitoring</p>
+                </div>
+            </div>
+            <div class="dash-header-right">
+                <div class="dash-uptime-badge" id="uptimeBadge">
+                    <span class="badge-label">UPTIME</span>
+                    <span class="badge-value" id="uptimeValue">--</span>
+                </div>
+                <div class="dash-refresh-info">
+                    <span id="lastUpdated">Connecting...</span>
+                    <button class="refresh-btn" id="refreshBtn" title="Refresh now">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ================================================
+         MAIN DASHBOARD GRID
+         ================================================ -->
+    <main class="dash-main">
+
+        <!-- ====== ROW 1: VITALS ====== -->
+        <section class="dash-section">
+            <h2 class="section-label">SYSTEM VITALS</h2>
+            <div class="vitals-grid">
+                <!-- CPU -->
+                <div class="vital-card" id="cpuCard">
+                    <div class="vital-header">
+                        <span class="vital-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
+                                <rect x="9" y="9" width="6" height="6"></rect>
+                                <line x1="9" y1="1" x2="9" y2="4"></line>
+                                <line x1="15" y1="1" x2="15" y2="4"></line>
+                                <line x1="9" y1="20" x2="9" y2="23"></line>
+                                <line x1="15" y1="20" x2="15" y2="23"></line>
+                                <line x1="20" y1="9" x2="23" y2="9"></line>
+                                <line x1="20" y1="14" x2="23" y2="14"></line>
+                                <line x1="1" y1="9" x2="4" y2="9"></line>
+                                <line x1="1" y1="14" x2="4" y2="14"></line>
+                            </svg>
+                        </span>
+                        <span class="vital-label">CPU USAGE</span>
+                    </div>
+                    <div class="vital-gauge-wrap">
+                        <svg class="vital-gauge" viewBox="0 0 120 120">
+                            <circle class="gauge-bg" cx="60" cy="60" r="52" />
+                            <circle class="gauge-fill" id="cpuGauge" cx="60" cy="60" r="52" />
+                        </svg>
+                        <div class="vital-gauge-text">
+                            <span class="gauge-value" id="cpuValue">--</span>
+                            <span class="gauge-unit">%</span>
+                        </div>
+                    </div>
+                    <div class="vital-detail" id="cpuDetail">-- cores</div>
+                </div>
+
+                <!-- Memory -->
+                <div class="vital-card" id="memCard">
+                    <div class="vital-header">
+                        <span class="vital-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="2" y="6" width="20" height="12" rx="2"></rect>
+                                <line x1="6" y1="10" x2="6" y2="14"></line>
+                                <line x1="10" y1="10" x2="10" y2="14"></line>
+                                <line x1="14" y1="10" x2="14" y2="14"></line>
+                                <line x1="18" y1="10" x2="18" y2="14"></line>
+                            </svg>
+                        </span>
+                        <span class="vital-label">MEMORY</span>
+                    </div>
+                    <div class="vital-gauge-wrap">
+                        <svg class="vital-gauge" viewBox="0 0 120 120">
+                            <circle class="gauge-bg" cx="60" cy="60" r="52" />
+                            <circle class="gauge-fill" id="memGauge" cx="60" cy="60" r="52" />
+                        </svg>
+                        <div class="vital-gauge-text">
+                            <span class="gauge-value" id="memValue">--</span>
+                            <span class="gauge-unit">%</span>
+                        </div>
+                    </div>
+                    <div class="vital-detail" id="memDetail">-- / -- GB</div>
+                </div>
+
+                <!-- Disk: System -->
+                <div class="vital-card" id="diskSysCard">
+                    <div class="vital-header">
+                        <span class="vital-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                                <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                            </svg>
+                        </span>
+                        <span class="vital-label">SYSTEM DISK</span>
+                    </div>
+                    <div class="vital-gauge-wrap">
+                        <svg class="vital-gauge" viewBox="0 0 120 120">
+                            <circle class="gauge-bg" cx="60" cy="60" r="52" />
+                            <circle class="gauge-fill" id="diskSysGauge" cx="60" cy="60" r="52" />
+                        </svg>
+                        <div class="vital-gauge-text">
+                            <span class="gauge-value" id="diskSysValue">--</span>
+                            <span class="gauge-unit">%</span>
+                        </div>
+                    </div>
+                    <div class="vital-detail" id="diskSysDetail">-- / -- GB</div>
+                </div>
+
+                <!-- Disk: Storage -->
+                <div class="vital-card" id="diskStorCard">
+                    <div class="vital-header">
+                        <span class="vital-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                        </span>
+                        <span class="vital-label">STORAGE (1TB)</span>
+                    </div>
+                    <div class="vital-gauge-wrap">
+                        <svg class="vital-gauge" viewBox="0 0 120 120">
+                            <circle class="gauge-bg" cx="60" cy="60" r="52" />
+                            <circle class="gauge-fill" id="diskStorGauge" cx="60" cy="60" r="52" />
+                        </svg>
+                        <div class="vital-gauge-text">
+                            <span class="gauge-value" id="diskStorValue">--</span>
+                            <span class="gauge-unit">%</span>
+                        </div>
+                    </div>
+                    <div class="vital-detail" id="diskStorDetail">-- / -- GB</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ====== ROW 2: SERVICES & NETWORK ====== -->
+        <section class="dash-section">
+            <h2 class="section-label">SERVICES &amp; SECURITY</h2>
+            <div class="services-grid">
+                <!-- Service Status Cards -->
+                <div class="service-panel">
+                    <h3 class="panel-title">Service Status</h3>
+                    <div class="service-list" id="serviceList">
+                        <div class="service-row skeleton">
+                            <span class="svc-dot"></span>
+                            <span class="svc-name">Loading...</span>
+                            <span class="svc-status">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SSL Certificate -->
+                <div class="ssl-panel">
+                    <h3 class="panel-title">SSL Certificate</h3>
+                    <div class="ssl-info" id="sslInfo">
+                        <div class="ssl-lock" id="sslLock">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                        </div>
+                        <div class="ssl-details">
+                            <div class="ssl-domain" id="sslDomain">api.jonathan-castro.com</div>
+                            <div class="ssl-issuer" id="sslIssuer">--</div>
+                            <div class="ssl-expiry-wrap">
+                                <span class="ssl-expiry-label">Expires:</span>
+                                <span class="ssl-expiry-date" id="sslExpiry">--</span>
+                            </div>
+                            <div class="ssl-days-wrap">
+                                <div class="ssl-days-bar">
+                                    <div class="ssl-days-fill" id="sslDaysFill"></div>
+                                </div>
+                                <span class="ssl-days-text" id="sslDaysLeft">-- days left</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Firewall / Fail2Ban -->
+                <div class="security-panel">
+                    <h3 class="panel-title">Security</h3>
+                    <div class="security-grid" id="securityGrid">
+                        <div class="sec-item">
+                            <span class="sec-label">Firewall (UFW)</span>
+                            <span class="sec-value" id="ufwStatus">--</span>
+                        </div>
+                        <div class="sec-item">
+                            <span class="sec-label">Fail2Ban</span>
+                            <span class="sec-value" id="f2bStatus">--</span>
+                        </div>
+                        <div class="sec-item">
+                            <span class="sec-label">Banned IPs</span>
+                            <span class="sec-value sec-number" id="f2bBanned">--</span>
+                        </div>
+                        <div class="sec-item">
+                            <span class="sec-label">SSH Port</span>
+                            <span class="sec-value" id="sshPort">2222</span>
+                        </div>
+                        <div class="sec-item">
+                            <span class="sec-label">Open Ports</span>
+                            <span class="sec-value" id="openPorts">--</span>
+                        </div>
+                        <div class="sec-item">
+                            <span class="sec-label">Last Attack</span>
+                            <span class="sec-value" id="lastAttack">--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ====== ROW 3: SYSTEM INFO & NETWORK ====== -->
+        <section class="dash-section">
+            <h2 class="section-label">SYSTEM INFO &amp; NETWORK</h2>
+            <div class="info-grid">
+                <!-- System Info -->
+                <div class="info-panel">
+                    <h3 class="panel-title">System</h3>
+                    <div class="info-list" id="systemInfo">
+                        <div class="info-row">
+                            <span class="info-key">Hostname</span>
+                            <span class="info-val" id="infoHostname">--</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-key">OS</span>
+                            <span class="info-val" id="infoOS">--</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-key">Kernel</span>
+                            <span class="info-val" id="infoKernel">--</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-key">CPU Model</span>
+                            <span class="info-val" id="infoCPU">--</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-key">CPU Temp</span>
+                            <span class="info-val" id="infoCPUTemp">--</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-key">Load Avg</span>
+                            <span class="info-val" id="infoLoad">--</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-key">Processes</span>
+                            <span class="info-val" id="infoProcs">--</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-key">Local IP</span>
+                            <span class="info-val" id="infoIP">192.168.0.50</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Network -->
+                <div class="info-panel">
+                    <h3 class="panel-title">Network</h3>
+                    <div class="info-list" id="networkInfo">
+                        <div class="info-row">
+                            <span class="info-key">Interface</span>
+                            <span class="info-val" id="netInterface">--</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-key">RX (received)</span>
+                            <span class="info-val" id="netRX">--</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-key">TX (sent)</span>
+                            <span class="info-val" id="netTX">--</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-key">DNS</span>
+                            <span class="info-val" id="netDNS">--</span>
+                        </div>
+                    </div>
+                    <h3 class="panel-title" style="margin-top: 1.5rem;">Database</h3>
+                    <div class="info-list" id="dbInfo">
+                        <div class="info-row">
+                            <span class="info-key">MariaDB</span>
+                            <span class="info-val" id="dbStatus">--</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-key">Version</span>
+                            <span class="info-val" id="dbVersion">--</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-key">DB Size</span>
+                            <span class="info-val" id="dbSize">--</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-key">Tables</span>
+                            <span class="info-val" id="dbTables">--</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-key">Connections</span>
+                            <span class="info-val" id="dbConns">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Logs -->
+                <div class="info-panel log-panel">
+                    <h3 class="panel-title">Recent Activity</h3>
+                    <div class="log-feed" id="logFeed">
+                        <div class="log-entry skeleton">Loading logs...</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ================================================
+         FOOTER
+         ================================================ -->
+    <footer class="dash-footer">
+        <span>Homelab Dashboard v1.0</span>
+        <span class="footer-sep">&bull;</span>
+        <span>Auto-refresh: <span id="refreshInterval">30s</span></span>
+        <span class="footer-sep">&bull;</span>
+        <span>jonathan-castrodb @ 192.168.0.50</span>
+    </footer>
+
+    <!-- Navigation Script -->
+    <script src="/navigation.js"></script>
+    
+    <!-- Dashboard Script -->
+    <script src="scripts.js"></script>
+</body>
+</html>
