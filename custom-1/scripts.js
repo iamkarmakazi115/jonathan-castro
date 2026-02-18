@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // CONFIGURATION
     // =============================================
     const API_BASE = 'https://api.jonathan-castro.com/api';
-    const API_KEY = ''; // Will be set during backend deployment
+    const API_KEY = 'a45d9911f152bcb049d1687e0aaac73c107406006c982a39126c2c0c792c3b00'; // Will be set during backend deployment
 
     // =============================================
     // DOM REFERENCES
