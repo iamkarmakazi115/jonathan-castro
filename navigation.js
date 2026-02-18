@@ -40,7 +40,7 @@ const SITE_CONFIG = {
         },
         {
             id: 'custom-1',
-            label: 'Custom 1',
+            label: 'Vuln Scanner',
             href: '/custom-1/'
         },
         {
