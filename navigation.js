@@ -65,7 +65,7 @@ const SITE_CONFIG = {
         },
         {
             id: 'custom-6',
-            label: 'Custom 6',
+            label: 'LAN Scanner',
             href: '/custom-6/'
         },
         {
