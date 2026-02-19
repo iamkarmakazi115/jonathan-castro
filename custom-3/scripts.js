@@ -180,15 +180,15 @@ function launchJitsi() {
     const params = new URLSearchParams();
 
     // Jitsi URL hash config options
-    const configParams = [
+     const configParams = [
         'config.startWithAudioMuted=true',
         'config.startWithVideoMuted=true',
         'config.prejoinConfig.enabled=false',
         'config.disableInviteFunctions=true',
         'config.hideConferenceSubject=false',
-        'config.subject=Private Chat',
-        `userInfo.displayName=${encodeURIComponent(displayName)}`,
-        `userInfo.email=${encodeURIComponent(currentUser.email)}`,
+        `config.subject=%22Private%20Chat%22`,
+        `userInfo.displayName=%22${encodeURIComponent(displayName)}%22`,
+        `userInfo.email=%22${encodeURIComponent(currentUser.email)}%22`,
         'interfaceConfig.SHOW_JITSI_WATERMARK=false',
         'interfaceConfig.SHOW_WATERMARK_FOR_GUESTS=false',
         'interfaceConfig.SHOW_BRAND_WATERMARK=false',
