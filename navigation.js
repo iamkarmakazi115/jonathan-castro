@@ -50,7 +50,7 @@ const SITE_CONFIG = {
         },
         {
             id: 'custom-3',
-            label: 'Custom 3',
+            label: 'Castro Chat',
             href: '/custom-3/'
         },
         {
