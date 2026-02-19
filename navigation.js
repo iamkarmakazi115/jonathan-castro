@@ -55,7 +55,7 @@ const SITE_CONFIG = {
         },
         {
             id: 'custom-4',
-            label: 'Custom 4',
+            label: 'SIEM Analyzer',
             href: '/custom-4/'
         },
         {
