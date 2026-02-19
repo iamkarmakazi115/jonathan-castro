@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Traffic Monitor | Jonathan Castro</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/assets/KarmakazifaviconICO.ico">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Shared Navigation Styles -->
+    <link rel="stylesheet" href="/navigation.css">
+
+    <!-- Page-Specific Styles -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Navigation Placeholder -->
+    <div id="nav-placeholder"></div>
+
+    <!-- ================================================
+         MONITOR HEADER
+         ================================================ -->
+    <header class="monitor-header">
+        <div class="header-content">
+            <div class="header-left">
+                <div class="header-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10"/>
+                        <path d="M2 12h4m12 0h4"/>
+                        <path d="M12 2v4m0 12v4"/>
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19 16l-3-3" stroke-linecap="round"/>
+                        <circle cx="20" cy="18" r="2" fill="currentColor"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="header-title">Network Traffic Monitor</h1>
+                    <p class="header-subtitle">Real-time packet capture & threat analysis</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="status-badge" id="statusBadge">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Connecting...</span>
+                </div>
+                <div class="header-meta" id="headerMeta">
+                    <span id="serverIp">—</span> · <span id="interfaceName">—</span> · Uptime: <span id="uptime">—</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ================================================
+         MAIN DASHBOARD
+         ================================================ -->
+    <main class="dashboard">
+
+        <!-- ---- SUMMARY CARDS ---- -->
+        <section class="summary-row">
+            <div class="stat-card">
+                <div class="stat-icon packets-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 12h-6l-2 3h-4l-2-3H2"/>
+                        <path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/>
+                    </svg>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value" id="totalPackets">0</span>
+                    <span class="stat-label">Total Packets</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon bytes-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                    </svg>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value" id="totalBytesIn">0 B</span>
+                    <span class="stat-label">Bytes In</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon bytes-out-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="19" x2="12" y2="5"/>
+                        <polyline points="5 12 12 5 19 12"/>
+                    </svg>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value" id="totalBytesOut">0 B</span>
+                    <span class="stat-label">Bytes Out</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon ips-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
+                        <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
+                        <line x1="6" y1="6" x2="6.01" y2="6"/>
+                        <line x1="6" y1="18" x2="6.01" y2="18"/>
+                    </svg>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value" id="uniqueIps">0</span>
+                    <span class="stat-label">Unique IPs</span>
+                </div>
+            </div>
+
+            <div class="stat-card alert-card" id="alertCard">
+                <div class="stat-icon alert-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                        <line x1="12" y1="9" x2="12" y2="13"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value" id="alertCount">0</span>
+                    <span class="stat-label">Alerts</span>
+                </div>
+                <div class="alert-breakdown" id="alertBreakdown"></div>
+            </div>
+        </section>
+
+        <!-- ---- TRAFFIC CHART & PROTOCOL BREAKDOWN ---- -->
+        <section class="chart-row">
+            <div class="panel traffic-chart-panel">
+                <div class="panel-header">
+                    <h2>Traffic Over Time</h2>
+                    <span class="panel-badge">Live</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="trafficChart"></canvas>
+                </div>
+            </div>
+
+            <div class="panel protocol-panel">
+                <div class="panel-header">
+                    <h2>Protocol Breakdown</h2>
+                </div>
+                <div class="protocol-bars" id="protocolBars">
+                    <div class="empty-state">Waiting for data...</div>
+                </div>
+                <div class="panel-header" style="margin-top: 1.5rem;">
+                    <h2>Threat Intel</h2>
+                </div>
+                <div class="threat-info" id="threatInfo">
+                    <div class="empty-state">Loading...</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ---- TOP TALKERS TABLE ---- -->
+        <section class="panel talkers-panel">
+            <div class="panel-header">
+                <h2>Top Talkers</h2>
+                <span class="panel-subtitle" id="talkerCount">0 IPs tracked</span>
+            </div>
+            <div class="table-wrapper">
+                <table class="data-table" id="talkersTable">
+                    <thead>
+                        <tr>
+                            <th>IP Address</th>
+                            <th>Type</th>
+                            <th>Packets</th>
+                            <th>Bytes In</th>
+                            <th>Bytes Out</th>
+                            <th>Connections</th>
+                            <th>Ports</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="talkersBody">
+                        <tr><td colspan="8" class="empty-state">Waiting for data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ---- ALERTS & LIVE PACKETS (side by side) ---- -->
+        <section class="bottom-row">
+            <div class="panel alerts-panel">
+                <div class="panel-header">
+                    <h2>Alerts & Threats</h2>
+                    <div class="filter-group" id="alertFilters">
+                        <button class="filter-btn active" data-filter="all">All</button>
+                        <button class="filter-btn" data-filter="critical">Critical</button>
+                        <button class="filter-btn" data-filter="high">High</button>
+                        <button class="filter-btn" data-filter="medium">Medium</button>
+                    </div>
+                </div>
+                <div class="alerts-list" id="alertsList">
+                    <div class="empty-state">No alerts yet — monitoring...</div>
+                </div>
+            </div>
+
+            <div class="panel packets-panel">
+                <div class="panel-header">
+                    <h2>Live Packets</h2>
+                    <div class="packet-controls">
+                        <button class="control-btn" id="pauseBtn" title="Pause/Resume">
+                            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                                <rect x="6" y="4" width="4" height="16"/>
+                                <rect x="14" y="4" width="4" height="16"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="packets-feed" id="packetsFeed">
+                    <div class="empty-state">Waiting for packets...</div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ================================================
+         SCRIPTS
+         ================================================ -->
+    <!-- Chart.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+    <!-- Shared Navigation -->
+    <script src="/navigation.js"></script>
+
+    <!-- Page Scripts -->
+    <script src="scripts.js"></script>
+
+</body>
+</html>
