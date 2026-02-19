@@ -60,7 +60,7 @@ const SITE_CONFIG = {
         },
         {
             id: 'custom-5',
-            label: 'Custom 5',
+            label: 'Network Monitor',
             href: '/custom-5/'
         },
         {
