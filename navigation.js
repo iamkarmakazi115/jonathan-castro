@@ -70,7 +70,7 @@ const SITE_CONFIG = {
         },
         {
             id: 'custom-7',
-            label: 'Custom 7',
+            label: 'FED Assistant',
             href: '/custom-7/'
         },
         {
