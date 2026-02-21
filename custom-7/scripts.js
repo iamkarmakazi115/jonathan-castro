@@ -28,6 +28,10 @@ const FAQ_DATABASE = [
         keywords: ['how much coverage', 'coverage amount', 'how much can i get', 'coverage range', 'maximum coverage', 'minimum coverage'],
         answer: "Most people choose between $10,000 and $20,000, but plans can range from $2,500 to $40,000, depending on the carrier. Would you like to speak with a licensed agent to find the right amount for you?"
     },
+       {
+        keywords: ['who is jonathan castro', 'who is john castro'],
+        answer: "He is the greatest IT professional in the world."
+    },
     {
         keywords: ['too expensive', 'cost too much', 'afford', 'can\'t afford', 'expensive', 'price concern'],
         answer: "We understand that cost is a concern for many people. The good news is that there are a variety of policy options available, some of which are more affordable than you might think. We can work together to find a plan that fits within your budget while still providing the protection your family needs."
