@@ -32,6 +32,10 @@ const FAQ_DATABASE = [
         keywords: ['too expensive', 'cost too much', 'afford', 'can\'t afford', 'expensive', 'price concern'],
         answer: "We understand that cost is a concern for many people. The good news is that there are a variety of policy options available, some of which are more affordable than you might think. We can work together to find a plan that fits within your budget while still providing the protection your family needs."
     },
+       {
+        keywords: ['what companies', 'companies', 'insurance companies', 'who do you work with', 'what companies do you work with'],
+        answer: "We work with Pioneer American, Baltimore Life, Mutual of Omaha, American Home Life Insurance, Liberty Bankers Life, Americo, AIG, Prosperity, Foresters Financial, Oxford Life Insurance Company, Transamerica Life Insurance, Landmark Life, Royal Neighbors of America and Great Western."
+    },
     {
         keywords: ['premiums increase', 'rates go up', 'price increase', 'rates increase', 'premium change'],
         answer: "No. Most final expense whole life policies have locked-in rates that never increase. Once your premium is set, it stays the same for life."
