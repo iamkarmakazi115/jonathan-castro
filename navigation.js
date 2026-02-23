@@ -75,7 +75,7 @@ const SITE_CONFIG = {
         },
         {
             id: 'custom-8',
-            label: 'Custom 8',
+            label: 'Tech News',
             href: '/custom-8/'
         },
         {
