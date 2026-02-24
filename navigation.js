@@ -80,7 +80,7 @@ const SITE_CONFIG = {
         },
         {
             id: 'custom-9',
-            label: 'Custom 9',
+            label: 'ThreatViz',
             href: '/custom-9/'
         }
     ]
