@@ -1151,44 +1151,49 @@ function parseWellsFargoText(text) {
     for (const block of blocks) {
         const fullText = block.text;
 
-        // Extract all dollar amounts from the line
+        // Extract all dollar amounts from the line (with positions)
         // Amounts look like: 22.48, 2,724.22, 1,000.00
-        const amountRegex = /(\d{1,3}(?:,\d{3})*\.\d{2})/g;
+        const amountRegex = /(-?\d{1,3}(?:,\d{3})*\.\d{2})/g;
         const amounts = [];
         let amMatch;
         while ((amMatch = amountRegex.exec(fullText)) !== null) {
-            amounts.push({ value: parseFloat(amMatch[1].replace(/,/g, '')), index: amMatch.index });
+            amounts.push({ value: parseFloat(amMatch[1].replace(/,/g, '')), index: amMatch.index, raw: amMatch[1] });
         }
 
         if (amounts.length === 0) continue;
 
-        // The description is everything before the first dollar amount at the "end" of the text
-        // Wells Fargo puts amounts at the end: description ... deposit_amount withdrawal_amount ending_balance
-        // We need to strip the amounts from the end and keep the description
+        // Determine if this is a deposit or withdrawal based on description keywords
+        const isDeposit = isDepositTransaction(fullText);
+        const isReturn = /Purchase Return|Provisional Credit|My Deals Cash Back/i.test(fullText);
 
-        // Find where the dollar amounts start at the end of the line
-        // Work backwards from the end - amounts cluster at the end
-        let descEnd = fullText.length;
-        if (amounts.length > 0) {
-            // Find the first amount that starts a continuous run of amounts at the end
-            // (there may be amounts embedded in descriptions like order numbers)
-            let lastNonAmountEnd = 0;
-            for (let i = amounts.length - 1; i >= 0; i--) {
-                const amt = amounts[i];
-                const afterAmt = amt.index + amounts[i].value.toFixed(2).length + (fullText.substring(amt.index, amt.index + 20).match(/,/g)?.length || 0);
-                // Check if there's meaningful text after this amount (not just more amounts or whitespace)
-                const textAfter = fullText.substring(afterAmt).replace(/[\d,.\s]/g, '').trim();
-
-                if (textAfter.length > 3) {
-                    // This amount is embedded in the description (like a phone number or ID)
-                    lastNonAmountEnd = afterAmt;
-                } else {
-                    descEnd = amt.index;
-                }
-            }
+        // The FIRST amount is the transaction amount (deposit or withdrawal)
+        // Additional amounts are typically: ending daily balance, or secondary column amounts
+        // We extract the transaction amount and then build the description by stripping ALL amounts out
+        
+        let transactionAmount = 0;
+        if (isDeposit || isReturn) {
+            transactionAmount = amounts[0].value;
+        } else {
+            transactionAmount = -Math.abs(amounts[0].value);
         }
 
-        let description = fullText.substring(0, descEnd).trim();
+        if (transactionAmount === 0) continue;
+
+        // Build description by removing ALL dollar amounts from the text
+        // This strips the transaction amount, ending balance, and any other numeric noise
+        let description = fullText;
+        
+        // Remove all dollar amounts (working from end to start to preserve indices)
+        const amountsReversed = [...amounts].reverse();
+        for (const amt of amountsReversed) {
+            const beforeAmt = description.substring(0, amt.index);
+            const amtLen = amt.raw.length;
+            const afterAmt = description.substring(amt.index + amtLen);
+            description = beforeAmt + afterAmt;
+        }
+
+        // Also remove negative signs left over from negative balances like "-179.91"
+        description = description.replace(/\s+-\s+/g, ' ');
 
         // Clean up description: remove Card XXXX references, long alphanumeric codes
         description = description
@@ -1197,61 +1202,11 @@ function parseWellsFargoText(text) {
             .replace(/\s*Card\s+\d{4}\s*/gi, '')       // Card 1089
             .replace(/\s*\d{15,}\s*/g, ' ')             // Long numeric codes
             .replace(/\s+ATM ID\s+\w+/gi, '')           // ATM ID refs
+            .replace(/\$\s*/g, '')                      // Dollar signs (from overdraft descriptions)
             .replace(/\s+/g, ' ')
             .trim();
 
-        // Remove trailing dollar amounts from description (ending daily balance that leaked in)
-        // Pattern: description text followed by one or more dollar amounts like "33.75" or "1,246.01"
-        // Keep only the description, strip trailing amounts
-        description = description.replace(/\s+(\-?\d{1,3}(?:,\d{3})*\.\d{2}\s*)+$/, '').trim();
-
-        // Also strip amounts that appear right after the main amount in the middle of description
-        // e.g., "Kroger #347 Houston TX 75.93 33.75" -> the 33.75 is ending balance
-        // But be careful not to strip amounts that are part of the description like "$106.60" in overdraft fees
-        // We'll handle this by removing the detected transaction amounts from the description
-        if (amounts.length >= 2) {
-            // Remove the last amount from description if it appears there (ending balance)
-            const lastAmtStr = amounts[amounts.length - 1].value.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            const lastAmtSimple = amounts[amounts.length - 1].value.toFixed(2);
-            description = description.replace(new RegExp('\\s+' + lastAmtSimple.replace('.', '\\.') + '\\s*$'), '').trim();
-            description = description.replace(new RegExp('\\s+' + lastAmtStr.replace('.', '\\.').replace(',', ',?') + '\\s*$'), '').trim();
-        }
-
         if (description.length < 3) continue;
-
-        // Determine the transaction amount
-        // Wells Fargo has separate Deposits and Withdrawals columns
-        // The last amount is often the ending daily balance
-        // Transaction amount is determined by the description keywords
-
-        let transactionAmount = 0;
-        const isDeposit = isDepositTransaction(description);
-        const isReturn = /Purchase Return|Provisional Credit|My Deals Cash Back/i.test(description);
-
-        if (amounts.length === 1) {
-            // Single amount — it's either a deposit or withdrawal
-            transactionAmount = isDeposit || isReturn ? amounts[0].value : -amounts[0].value;
-        } else if (amounts.length === 2) {
-            // Two amounts: one is the transaction, one is the ending balance
-            // The transaction amount is typically the first one
-            if (isDeposit || isReturn) {
-                transactionAmount = amounts[0].value;
-            } else {
-                transactionAmount = -amounts[0].value;
-            }
-        } else if (amounts.length >= 3) {
-            // Three+ amounts: could be deposit amount, withdrawal amount, ending balance
-            // Or description contains embedded numbers
-            // Use the first amount that's in the right column position
-            if (isDeposit || isReturn) {
-                transactionAmount = amounts[0].value;
-            } else {
-                // For withdrawals, the amount is the first one that seems like a transaction
-                transactionAmount = -amounts[0].value;
-            }
-        }
-
-        if (transactionAmount === 0) continue;
 
         // Determine the year for this transaction
         let year = statementYear;
