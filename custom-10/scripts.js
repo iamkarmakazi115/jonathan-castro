@@ -1081,12 +1081,20 @@ function parseWellsFargoText(text) {
             continue;
         }
 
-        // Skip header rows
-        if (/^\s*Date\s+Check/i.test(trimmed)) continue;
+        // Skip header rows and page boundary text
+        if (/^\s*Date\s+(Check\s+)?Number\s+Description/i.test(trimmed)) continue;
         if (/^\s*Number\s+Description/i.test(trimmed)) continue;
         if (/Deposits\/\s*Additions/i.test(trimmed)) continue;
         if (/Withdrawals\/\s*Subtractions/i.test(trimmed)) continue;
         if (/Ending daily/i.test(trimmed)) continue;
+        if (/Date\s+Number\s+Description\s+Additions\s+Subtractions\s+balance/i.test(trimmed)) continue;
+
+        // Skip page headers/footers (e.g. "October 24, 2025 Page 3 of 8")
+        if (/Page\s+\d+\s+of\s+\d+/i.test(trimmed)) continue;
+        // Skip standalone month headers like "January 27, 2026"
+        if (/^(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},\s+\d{4}$/i.test(trimmed)) continue;
+        // Skip "Check Deposits/ Withdrawals/ Ending daily" column header variants
+        if (/^Check\s+Deposits/i.test(trimmed)) continue;
 
         if (inTransactionSection && trimmed.length > 0) {
             allText += trimmed + '\n';
@@ -1116,13 +1124,25 @@ function parseWellsFargoText(text) {
     let currentBlock = null;
 
     for (const line of txLines) {
+        // Skip lines that are page headers/column headers that slipped through
+        if (/Date\s+Number\s+Description\s+Additions\s+Subtractions\s+balance/i.test(line)) continue;
+        if (/Page\s+\d+\s+of\s+\d+/i.test(line)) continue;
+
         const dateMatch = line.match(dateStartRegex);
         if (dateMatch) {
             if (currentBlock) blocks.push(currentBlock);
             currentBlock = { dateStr: dateMatch[0].trim(), month: parseInt(dateMatch[1]), day: parseInt(dateMatch[2]), text: line.substring(dateMatch[0].length).trim() };
         } else if (currentBlock) {
             // Continuation line — append to current block
-            currentBlock.text += ' ' + line.trim();
+            // But first strip any page boundary text that leaked in
+            let cleanLine = line.trim()
+                .replace(/(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},\s+\d{4}\s*Page\s+\d+\s+of\s+\d+.*/i, '')
+                .replace(/Page\s+\d+\s+of\s+\d+\s*Date\s+Number\s+Description.*/i, '')
+                .replace(/Date\s+Number\s+Description\s+Additions\s+Subtractions\s+balance.*/i, '')
+                .trim();
+            if (cleanLine.length > 0) {
+                currentBlock.text += ' ' + cleanLine;
+            }
         }
     }
     if (currentBlock) blocks.push(currentBlock);
@@ -1179,6 +1199,23 @@ function parseWellsFargoText(text) {
             .replace(/\s+ATM ID\s+\w+/gi, '')           // ATM ID refs
             .replace(/\s+/g, ' ')
             .trim();
+
+        // Remove trailing dollar amounts from description (ending daily balance that leaked in)
+        // Pattern: description text followed by one or more dollar amounts like "33.75" or "1,246.01"
+        // Keep only the description, strip trailing amounts
+        description = description.replace(/\s+(\-?\d{1,3}(?:,\d{3})*\.\d{2}\s*)+$/, '').trim();
+
+        // Also strip amounts that appear right after the main amount in the middle of description
+        // e.g., "Kroger #347 Houston TX 75.93 33.75" -> the 33.75 is ending balance
+        // But be careful not to strip amounts that are part of the description like "$106.60" in overdraft fees
+        // We'll handle this by removing the detected transaction amounts from the description
+        if (amounts.length >= 2) {
+            // Remove the last amount from description if it appears there (ending balance)
+            const lastAmtStr = amounts[amounts.length - 1].value.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            const lastAmtSimple = amounts[amounts.length - 1].value.toFixed(2);
+            description = description.replace(new RegExp('\\s+' + lastAmtSimple.replace('.', '\\.') + '\\s*$'), '').trim();
+            description = description.replace(new RegExp('\\s+' + lastAmtStr.replace('.', '\\.').replace(',', ',?') + '\\s*$'), '').trim();
+        }
 
         if (description.length < 3) continue;
 
@@ -1476,12 +1513,20 @@ function estimateMonthly(amount, frequency) {
 function detectPaySchedule(income) {
     if (income.length === 0) return { frequency: 'unknown', avgPay: 0, payDays: [] };
 
-    // Find the most common income source (usually payroll)
-    const amounts = income.map(t => t.amount);
+    // Focus on PAYROLL deposits only for pay frequency detection
+    // Other deposits (Zelle from friends, Fidelity transfers, returns) skew the analysis
+    const payrollDeposits = income.filter(t => 
+        /payroll|final expense di|direct deposit/i.test(t.description)
+    );
+
+    // If we found payroll deposits, use those for frequency detection
+    const sourceDeposits = payrollDeposits.length >= 2 ? payrollDeposits : income;
+    
+    const amounts = sourceDeposits.map(t => t.amount);
     const avgPay = amounts.reduce((s, a) => s + a, 0) / amounts.length;
 
-    // Check intervals
-    const sorted = [...income].sort((a, b) => a.date - b.date);
+    // Check intervals between deposits
+    const sorted = [...sourceDeposits].sort((a, b) => a.date - b.date);
     const intervals = [];
     for (let i = 1; i < sorted.length; i++) {
         intervals.push((sorted[i].date - sorted[i - 1].date) / (1000 * 60 * 60 * 24));
@@ -1492,13 +1537,13 @@ function detectPaySchedule(income) {
     let frequency = 'monthly';
     if (avgInterval <= 10) frequency = 'weekly';
     else if (avgInterval <= 18) frequency = 'biweekly';
-    else if (avgInterval <= 20) frequency = 'semi-monthly';
+    else if (avgInterval <= 22) frequency = 'semi-monthly';
 
-    // Identify typical pay days
+    // Identify typical pay days from payroll deposits
     const payDays = sorted.map(t => t.date.getDate());
     const commonDays = [...new Set(payDays)].sort((a, b) => a - b);
 
-    return { frequency, avgPay, payDays: commonDays, deposits: sorted };
+    return { frequency, avgPay, payDays: commonDays, deposits: sorted, totalDeposits: income.length };
 }
 
 function categorizeSpending(expenses) {
@@ -1661,7 +1706,7 @@ function renderBudgetResults(data) {
                 <div class="info-value">${ps.frequency.charAt(0).toUpperCase() + ps.frequency.slice(1)}</div>
             </div>
             <div class="info-card">
-                <div class="info-label">Avg Deposit</div>
+                <div class="info-label">Avg Paycheck</div>
                 <div class="info-value positive">${formatCurrency(ps.avgPay)}</div>
             </div>
             <div class="info-card">
@@ -1669,7 +1714,11 @@ function renderBudgetResults(data) {
                 <div class="info-value">${ps.payDays.length > 0 ? ps.payDays.map(d => ordinal(d)).join(', ') : 'Varies'}</div>
             </div>
             <div class="info-card">
-                <div class="info-label">Total Deposits</div>
+                <div class="info-label">Payroll Deposits</div>
+                <div class="info-value">${ps.deposits ? ps.deposits.length : data.income.length}</div>
+            </div>
+            <div class="info-card">
+                <div class="info-label">Total Deposits (All Sources)</div>
                 <div class="info-value">${data.income.length}</div>
             </div>
         </div>`;
