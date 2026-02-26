@@ -30,6 +30,11 @@ let trendChart = null;
 let budgetData = null;
 let uploadedFiles = [];
 
+// Configure pdf.js worker to use CDN (avoids CSP blob: violation)
+if (typeof pdfjsLib !== 'undefined') {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
 // Utility functions
 function formatCurrency(n, decimals = 2) {
     if (n == null || isNaN(n)) return '--';
@@ -881,9 +886,38 @@ async function parseFile(file) {
             for (let p = 1; p <= pdf.numPages; p++) {
                 const page = await pdf.getPage(p);
                 const textContent = await page.getTextContent();
-                const pageText = textContent.items.map(item => item.str).join(' ');
-                fullText += pageText + '\n';
+
+                // Reconstruct lines using Y-coordinates
+                // Each text item has a transform[5] (Y position) — items on the same
+                // visual line share roughly the same Y value
+                const items = textContent.items.filter(item => item.str.trim().length > 0);
+                if (items.length === 0) continue;
+
+                // Group items by their Y-coordinate (rounded to handle minor differences)
+                const lineMap = {};
+                items.forEach(item => {
+                    const y = Math.round(item.transform[5]);
+                    const x = Math.round(item.transform[4]);
+                    if (!lineMap[y]) lineMap[y] = [];
+                    lineMap[y].push({ x, text: item.str });
+                });
+
+                // Sort lines by Y descending (PDF Y starts at bottom, so higher Y = higher on page)
+                const sortedYs = Object.keys(lineMap).map(Number).sort((a, b) => b - a);
+
+                for (const y of sortedYs) {
+                    // Sort items within each line by X coordinate (left to right)
+                    const lineItems = lineMap[y].sort((a, b) => a.x - b.x);
+                    const lineText = lineItems.map(item => item.text).join(' ').trim();
+                    if (lineText.length > 0) {
+                        fullText += lineText + '\n';
+                    }
+                }
+                fullText += '\n'; // Page break
             }
+
+            console.log('[PDF Parser] Extracted text preview (first 2000 chars):', fullText.substring(0, 2000));
+            console.log('[PDF Parser] Total text length:', fullText.length);
 
             // Parse transactions from extracted text
             const parsed = extractTransactionsFromText(fullText);
@@ -1071,6 +1105,9 @@ function parseWellsFargoText(text) {
     // - Ending daily balance appears as an additional amount at end of day groups
 
     const txLines = allText.split('\n').filter(l => l.trim().length > 0);
+
+    console.log('[WF Parser] Transaction section lines:', txLines.length);
+    console.log('[WF Parser] First 10 lines:', txLines.slice(0, 10));
 
     // Group lines into transaction blocks
     // A new transaction starts when a line begins with a date pattern
