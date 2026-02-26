@@ -1181,19 +1181,10 @@ function parseWellsFargoText(text) {
 
         // Build description by removing ALL dollar amounts from the text
         // This strips the transaction amount, ending balance, and any other numeric noise
-        let description = fullText;
-        
-        // Remove all dollar amounts (working from end to start to preserve indices)
-        const amountsReversed = [...amounts].reverse();
-        for (const amt of amountsReversed) {
-            const beforeAmt = description.substring(0, amt.index);
-            const amtLen = amt.raw.length;
-            const afterAmt = description.substring(amt.index + amtLen);
-            description = beforeAmt + afterAmt;
-        }
-
-        // Also remove negative signs left over from negative balances like "-179.91"
-        description = description.replace(/\s+-\s+/g, ' ');
+        let description = fullText
+            .replace(/-?\d{1,3}(?:,\d{3})*\.\d{2}/g, ' ')  // Remove all dollar amounts
+            .replace(/\s+-\s+/g, ' ')                         // Remove leftover negative signs
+            .replace(/\$\s*/g, '')                            // Remove dollar signs
 
         // Clean up description: remove Card XXXX references, long alphanumeric codes
         description = description
