@@ -928,11 +928,21 @@ function parseDateString(str) {
 
 function extractTransactionsFromText(text) {
     const transactions = [];
-    // Common bank statement patterns
+
+    // -------------------------------------------------------
+    // STEP 1: Detect Wells Fargo format
+    // -------------------------------------------------------
+    const isWellsFargo = /Wells Fargo|Transaction [Hh]istory|Statement period activity summary/i.test(text);
+
+    if (isWellsFargo) {
+        return parseWellsFargoText(text);
+    }
+
+    // -------------------------------------------------------
+    // STEP 2: Generic bank statement fallback
+    // -------------------------------------------------------
     const patterns = [
-        // Date + Description + Amount: 01/15/2025 NETFLIX SUBSCRIPTION -15.99
         /(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})\s+(.+?)\s+(-?\$?[\d,]+\.?\d{0,2})\s*$/gm,
-        // Date Description Debit Credit: 01/15 Netflix 15.99
         /(\d{1,2}[\/\-]\d{1,2}(?:[\/\-]\d{2,4})?)\s+(.+?)\s+([\d,]+\.\d{2})\s*(?:([\d,]+\.\d{2}))?\s*$/gm
     ];
 
@@ -942,23 +952,18 @@ function extractTransactionsFromText(text) {
             const date = parseDateString(match[1]);
             const desc = match[2].trim();
             let amount = parseFloat(match[3].replace(/[$,]/g, ''));
-
-            // If negative sign or common debit keywords
             if (match[3].startsWith('-') || /debit|payment|purchase|withdrawal/i.test(desc)) {
                 amount = -Math.abs(amount);
             }
-            // If credit/deposit keywords
             if (/deposit|credit|payroll|direct dep|salary|transfer in/i.test(desc)) {
                 amount = Math.abs(amount);
             }
-
             if (desc.length > 2 && !isNaN(amount) && amount !== 0) {
                 transactions.push({ date, description: desc, amount });
             }
         }
     }
 
-    // If no structured matches, try line-by-line extraction
     if (transactions.length === 0) {
         const lines = text.split('\n');
         for (const line of lines) {
@@ -979,6 +984,274 @@ function extractTransactionsFromText(text) {
     }
 
     return transactions;
+}
+
+
+// ==============================================================
+// WELLS FARGO SPECIFIC PARSER
+// ==============================================================
+// Wells Fargo PDF text comes out as a continuous stream where
+// each transaction starts with a short date (M/D or MM/DD),
+// followed by a description (possibly multi-line), then one or
+// more dollar amounts on the same conceptual line. The PDF
+// extraction joins everything with spaces, so we split by lines
+// first, then re-assemble transaction blocks.
+// ==============================================================
+
+function parseWellsFargoText(text) {
+    const transactions = [];
+
+    // Detect the statement year from the header text
+    // Look for patterns like "October 24, 2025" or "January 27, 2026"
+    const yearMatch = text.match(/(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+(\d{4})/i);
+    const statementYear = yearMatch ? parseInt(yearMatch[1]) : new Date().getFullYear();
+
+    // Detect the statement period to know which months map to which year
+    // e.g. "Beginning balance on 12/24" with year 2026 means Dec = 2025, Jan = 2026
+    const periodMatch = text.match(/Beginning balance on\s+(\d{1,2})\/(\d{1,2})/);
+    const periodStartMonth = periodMatch ? parseInt(periodMatch[1]) : null;
+
+    // Detect the ending date month from "Ending balance on M/DD"
+    const endMatch = text.match(/Ending balance on\s+(\d{1,2})\/(\d{1,2})/);
+    const periodEndMonth = endMatch ? parseInt(endMatch[1]) : null;
+
+    // Split text into lines
+    const lines = text.split('\n');
+    let allText = '';
+    let inTransactionSection = false;
+
+    for (const line of lines) {
+        const trimmed = line.trim();
+
+        // Detect start of transaction section
+        if (/Transaction [Hh]istory/i.test(trimmed) || /Transaction History \(continued\)/i.test(trimmed)) {
+            inTransactionSection = true;
+            continue;
+        }
+
+        // Detect end of transaction section
+        if (inTransactionSection && /^Totals\s/i.test(trimmed)) {
+            inTransactionSection = false;
+            continue;
+        }
+        if (/The Ending Daily Balance does not reflect/i.test(trimmed)) {
+            inTransactionSection = false;
+            continue;
+        }
+        if (/Summary of Overdraft/i.test(trimmed)) {
+            inTransactionSection = false;
+            continue;
+        }
+        if (/Monthly service fee summary/i.test(trimmed)) {
+            inTransactionSection = false;
+            continue;
+        }
+
+        // Skip header rows
+        if (/^\s*Date\s+Check/i.test(trimmed)) continue;
+        if (/^\s*Number\s+Description/i.test(trimmed)) continue;
+        if (/Deposits\/\s*Additions/i.test(trimmed)) continue;
+        if (/Withdrawals\/\s*Subtractions/i.test(trimmed)) continue;
+        if (/Ending daily/i.test(trimmed)) continue;
+
+        if (inTransactionSection && trimmed.length > 0) {
+            allText += trimmed + '\n';
+        }
+    }
+
+    // Now parse the collected transaction text
+    // Wells Fargo PDF text for each transaction looks like:
+    // "9/25 Purchase authorized on 09/23 Chick-Fil-A #03322 Houston TX S305266417636713 Card 1089 22.48"
+    // or across multiple lines:
+    // "10/3 Final Expense Di Payroll 251003 648097637282Kfq Castro,Jonathan J 2,724.22"
+    //
+    // Key patterns:
+    // - Transaction starts with M/D or MM/DD at the beginning of a line
+    // - Dollar amounts are decimal numbers like 22.48, 2,724.22, 1,000.00
+    // - Ending daily balance appears as an additional amount at end of day groups
+
+    const txLines = allText.split('\n').filter(l => l.trim().length > 0);
+
+    // Group lines into transaction blocks
+    // A new transaction starts when a line begins with a date pattern
+    const dateStartRegex = /^(\d{1,2})\/(\d{1,2})\s+/;
+    const blocks = [];
+    let currentBlock = null;
+
+    for (const line of txLines) {
+        const dateMatch = line.match(dateStartRegex);
+        if (dateMatch) {
+            if (currentBlock) blocks.push(currentBlock);
+            currentBlock = { dateStr: dateMatch[0].trim(), month: parseInt(dateMatch[1]), day: parseInt(dateMatch[2]), text: line.substring(dateMatch[0].length).trim() };
+        } else if (currentBlock) {
+            // Continuation line — append to current block
+            currentBlock.text += ' ' + line.trim();
+        }
+    }
+    if (currentBlock) blocks.push(currentBlock);
+
+    // Parse each block to extract description and amounts
+    for (const block of blocks) {
+        const fullText = block.text;
+
+        // Extract all dollar amounts from the line
+        // Amounts look like: 22.48, 2,724.22, 1,000.00
+        const amountRegex = /(\d{1,3}(?:,\d{3})*\.\d{2})/g;
+        const amounts = [];
+        let amMatch;
+        while ((amMatch = amountRegex.exec(fullText)) !== null) {
+            amounts.push({ value: parseFloat(amMatch[1].replace(/,/g, '')), index: amMatch.index });
+        }
+
+        if (amounts.length === 0) continue;
+
+        // The description is everything before the first dollar amount at the "end" of the text
+        // Wells Fargo puts amounts at the end: description ... deposit_amount withdrawal_amount ending_balance
+        // We need to strip the amounts from the end and keep the description
+
+        // Find where the dollar amounts start at the end of the line
+        // Work backwards from the end - amounts cluster at the end
+        let descEnd = fullText.length;
+        if (amounts.length > 0) {
+            // Find the first amount that starts a continuous run of amounts at the end
+            // (there may be amounts embedded in descriptions like order numbers)
+            let lastNonAmountEnd = 0;
+            for (let i = amounts.length - 1; i >= 0; i--) {
+                const amt = amounts[i];
+                const afterAmt = amt.index + amounts[i].value.toFixed(2).length + (fullText.substring(amt.index, amt.index + 20).match(/,/g)?.length || 0);
+                // Check if there's meaningful text after this amount (not just more amounts or whitespace)
+                const textAfter = fullText.substring(afterAmt).replace(/[\d,.\s]/g, '').trim();
+
+                if (textAfter.length > 3) {
+                    // This amount is embedded in the description (like a phone number or ID)
+                    lastNonAmountEnd = afterAmt;
+                } else {
+                    descEnd = amt.index;
+                }
+            }
+        }
+
+        let description = fullText.substring(0, descEnd).trim();
+
+        // Clean up description: remove Card XXXX references, long alphanumeric codes
+        description = description
+            .replace(/\s+S\d{15,}\s*/g, ' ')          // Wells Fargo S-codes
+            .replace(/\s+P\d{15,}\s*/g, ' ')           // Wells Fargo P-codes
+            .replace(/\s*Card\s+\d{4}\s*/gi, '')       // Card 1089
+            .replace(/\s*\d{15,}\s*/g, ' ')             // Long numeric codes
+            .replace(/\s+ATM ID\s+\w+/gi, '')           // ATM ID refs
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        if (description.length < 3) continue;
+
+        // Determine the transaction amount
+        // Wells Fargo has separate Deposits and Withdrawals columns
+        // The last amount is often the ending daily balance
+        // Transaction amount is determined by the description keywords
+
+        let transactionAmount = 0;
+        const isDeposit = isDepositTransaction(description);
+        const isReturn = /Purchase Return|Provisional Credit|My Deals Cash Back/i.test(description);
+
+        if (amounts.length === 1) {
+            // Single amount — it's either a deposit or withdrawal
+            transactionAmount = isDeposit || isReturn ? amounts[0].value : -amounts[0].value;
+        } else if (amounts.length === 2) {
+            // Two amounts: one is the transaction, one is the ending balance
+            // The transaction amount is typically the first one
+            if (isDeposit || isReturn) {
+                transactionAmount = amounts[0].value;
+            } else {
+                transactionAmount = -amounts[0].value;
+            }
+        } else if (amounts.length >= 3) {
+            // Three+ amounts: could be deposit amount, withdrawal amount, ending balance
+            // Or description contains embedded numbers
+            // Use the first amount that's in the right column position
+            if (isDeposit || isReturn) {
+                transactionAmount = amounts[0].value;
+            } else {
+                // For withdrawals, the amount is the first one that seems like a transaction
+                transactionAmount = -amounts[0].value;
+            }
+        }
+
+        if (transactionAmount === 0) continue;
+
+        // Determine the year for this transaction
+        let year = statementYear;
+        // If the statement spans a year boundary (e.g., Dec 2025 to Jan 2026)
+        if (periodStartMonth && periodEndMonth && periodStartMonth > periodEndMonth) {
+            // Cross-year statement: months >= periodStartMonth are previous year
+            if (block.month >= periodStartMonth) {
+                year = statementYear - 1;
+            }
+        } else if (periodEndMonth) {
+            // Same-year statement: use the statement end date's year logic
+            // The header date (e.g., "October 24, 2025") gives us the year
+            // If transaction month > header month, it's the prior year
+            const headerMonthMatch = text.match(/(January|February|March|April|May|June|July|August|September|October|November|December)/i);
+            if (headerMonthMatch) {
+                const headerMonth = ['january','february','march','april','may','june','july','august','september','october','november','december'].indexOf(headerMonthMatch[1].toLowerCase()) + 1;
+                if (block.month > headerMonth) {
+                    year = statementYear - 1;
+                }
+            }
+        }
+
+        const txDate = new Date(year, block.month - 1, block.day);
+
+        transactions.push({
+            date: txDate,
+            description: cleanWFDescription(description),
+            amount: transactionAmount
+        });
+    }
+
+    console.log(`[WF Parser] Extracted ${transactions.length} transactions`);
+    return transactions;
+}
+
+function isDepositTransaction(desc) {
+    const depositPatterns = [
+        /Payroll/i, /Direct Deposit/i, /Final Expense Di/i,
+        /Zelle From/i, /Money Transfer.*From/i,
+        /Online Transfer From/i,
+        /Provisional Credit/i, /Purchase Return/i,
+        /ATM Cash Deposit/i,
+        /University of Ph/i,          // Student disbursements
+        /Kim Wilhelm Busi/i,           // Business vendor payments
+        /Fid Bkg Svc LLC/i,           // Fidelity transfers
+        /My Deals Cash Back/i,
+        /Figloans.*From/i
+    ];
+    return depositPatterns.some(p => p.test(desc));
+}
+
+function cleanWFDescription(desc) {
+    return desc
+        // Remove "Purchase authorized on MM/DD" prefix — keep the merchant
+        .replace(/^Purchase authorized on\s+\d{2}\/\d{2}\s*/i, '')
+        // Remove "Recurring Payment authorized on MM/DD" prefix
+        .replace(/^Recurring Payment authorized on\s+\d{2}\/\d{2}\s*/i, '')
+        // Remove "Purchase Return authorized on MM/DD" prefix but mark as return
+        .replace(/^Purchase Return authorized on\s+\d{2}\/\d{2}\s*/i, 'RETURN: ')
+        // Remove "Non-WF ATM Withdrawal authorized on MM/DD" prefix
+        .replace(/^Non-WF ATM Withdrawal authorized on\s+\d{2}\/\d{2}\s*/i, 'ATM Withdrawal ')
+        // Remove "ATM Withdrawal authorized on MM/DD" prefix
+        .replace(/^ATM Withdrawal authorized on\s+\d{2}\/\d{2}\s*/i, 'ATM Withdrawal ')
+        // Remove "Money Transfer authorized on MM/DD From" prefix
+        .replace(/^Money Transfer authorized on\s+\d{2}\/\d{2}\s+From\s*/i, 'Transfer From ')
+        // Clean trailing reference codes
+        .replace(/\s+Ref\s+#\w+.*$/i, '')
+        // Clean location details at end (2-letter state codes, phone numbers)
+        .replace(/\s+\d{3}-\d{3}-\d{4}\s+[A-Z]{2}\s*$/i, '')
+        .replace(/\s+\d{3}-\d{7}\s+[A-Z]{2}\s*$/i, '')
+        // Clean "on MM/DD/YY" within remaining text
+        .replace(/\s+on\s+\d{2}\/\d{2}\/\d{2}\s*/i, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
 }
 
 
@@ -1122,11 +1395,20 @@ function detectRecurring(expenses) {
 
 function normalizeMerchant(desc) {
     return desc.toLowerCase()
-        .replace(/[0-9#*]/g, '')
+        .replace(/authorized on \d{2}\/\d{2}/gi, '')
+        .replace(/\s+s\d{15,}/gi, '')
+        .replace(/\s+p\d{15,}/gi, '')
+        .replace(/\s+card\s+\d{4}/gi, '')
+        .replace(/\d{15,}/g, '')
+        .replace(/[#*]/g, '')
+        .replace(/(purchase|recurring payment|debit|pos|ach|auto-pay|autopay)/gi, '')
+        .replace(/\s+(houston|stafford|sugar land|santa clara|bentonville)\s+(tx|ca|ar|wa|ny|nj|pa|fl|mo|wi|mt)\s*/gi, ' ')
+        .replace(/\d{3}-\d{3,4}-?\d{4}/g, '')   // Phone numbers
+        .replace(/\s+\d{6,}/g, '')               // Long reference numbers
+        .replace(/\*\w+/g, '')                    // Amazon *ID codes
         .replace(/\s+/g, ' ')
-        .replace(/(payment|purchase|debit|pos|ach|recurring|auto-pay|autopay)/gi, '')
         .trim()
-        .substring(0, 30);
+        .substring(0, 35);
 }
 
 function estimateFrequency(txns) {
@@ -1184,16 +1466,19 @@ function detectPaySchedule(income) {
 
 function categorizeSpending(expenses) {
     const categories = {
-        'Housing': { keywords: ['rent', 'mortgage', 'hoa', 'property', 'apartment', 'lease'], total: 0, count: 0, color: '#00ff88' },
-        'Utilities': { keywords: ['electric', 'gas', 'water', 'internet', 'phone', 'mobile', 'cable', 'utility', 'verizon', 'at&t', 'tmobile', 't-mobile', 'comcast', 'spectrum'], total: 0, count: 0, color: '#00d4ff' },
-        'Insurance': { keywords: ['insurance', 'geico', 'allstate', 'progressive', 'state farm', 'liberty mutual', 'premium'], total: 0, count: 0, color: '#a855f7' },
-        'Groceries': { keywords: ['grocery', 'walmart', 'target', 'costco', 'kroger', 'safeway', 'aldi', 'trader joe', 'whole foods', 'publix', 'food', 'market'], total: 0, count: 0, color: '#22c55e' },
-        'Dining': { keywords: ['restaurant', 'mcdonald', 'starbucks', 'chipotle', 'subway', 'doordash', 'uber eats', 'grubhub', 'dining', 'pizza', 'burger', 'taco', 'cafe', 'coffee'], total: 0, count: 0, color: '#f97316' },
-        'Transportation': { keywords: ['gas station', 'shell', 'chevron', 'exxon', 'bp', 'uber', 'lyft', 'parking', 'toll', 'transit', 'fuel', 'car wash'], total: 0, count: 0, color: '#eab308' },
-        'Subscriptions': { keywords: ['netflix', 'spotify', 'hulu', 'disney', 'amazon prime', 'apple', 'google', 'youtube', 'hbo', 'paramount', 'subscription', 'membership'], total: 0, count: 0, color: '#ec4899' },
-        'Shopping': { keywords: ['amazon', 'ebay', 'etsy', 'best buy', 'apple store', 'clothing', 'fashion', 'nike', 'nordstrom', 'macy', 'purchase'], total: 0, count: 0, color: '#06b6d4' },
-        'Healthcare': { keywords: ['pharmacy', 'cvs', 'walgreens', 'doctor', 'medical', 'hospital', 'dental', 'health', 'rx', 'prescription'], total: 0, count: 0, color: '#ef4444' },
-        'Debt Payments': { keywords: ['loan', 'student', 'credit card', 'minimum payment', 'interest', 'financing', 'capital one', 'chase', 'amex'], total: 0, count: 0, color: '#f43f5e' },
+        'Housing': { keywords: ['rent', 'mortgage', 'hoa', 'property', 'apartment', 'lease', 'computers wherhouse', 'zelle to computers'], total: 0, count: 0, color: '#00ff88' },
+        'Utilities': { keywords: ['electric', 'direct energy', 'water', 'internet', 'phone', 'mobile', 'cable', 'utility', 'verizon', 'at&t', 'tmobile', 't-mobile', 'comcast', 'xfinity', 'spectrum'], total: 0, count: 0, color: '#00d4ff' },
+        'Auto & Transport': { keywords: ['gas station', 'shell', 'chevron', 'exxon', 'murphy', 'fugua chevron', 'uber', 'lyft', 'parking', 'toll', 'hctra', 'ez tag', 'transit', 'fuel', 'car wash', 'mister car wash', 'autozone', 'pnm*sameday auto', 'love\'s', 'quick stuff'], total: 0, count: 0, color: '#eab308' },
+        'Insurance': { keywords: ['insurance', 'insurancetpa', 'geico', 'allstate', 'progressive', 'state farm', 'liberty mutual', 'premium', 'vsp'], total: 0, count: 0, color: '#a855f7' },
+        'Groceries': { keywords: ['grocery', 'kroger', 'h-e-b', 'heb', 'walmart', 'wal-mart', 'wm supercenter', 'target', 'costco', 'samsclub', 'sams club', 'safeway', 'aldi', 'food town', 'whole foods', 'publix', 'amazon groce', 'amazon grocery'], total: 0, count: 0, color: '#22c55e' },
+        'Dining': { keywords: ['restaurant', 'mcdonald', 'chick-fil-a', 'starbucks', 'chipotle', 'subway', 'doordash', 'dd *doordash', 'uber eats', 'grubhub', 'dining', 'pizza hut', 'burger king', 'taco bell', 'whataburger', 'popeyes', 'sonic drive', 'jack in the box', 'kfc', 'shipley', 'dairy queen', 'five below', 'tortilleria', 'a&y liquor', 'wendy'], total: 0, count: 0, color: '#f97316' },
+        'Subscriptions': { keywords: ['netflix', 'spotify', 'hulu', 'disney', 'amazon prime', 'apple.com/bill', 'apple.com', 'google *', 'youtube', 'hbo', 'paramount', 'amc+', 'amcplus', 'crunchyroll', 'hidive', 'peacock', 'kocowa', 'wemod', 'openai', 'chatgpt', 'claude.ai', 'anthropic', 'glass cannon', 'monthly mal', 'prime video'], total: 0, count: 0, color: '#ec4899' },
+        'Shopping': { keywords: ['amazon', 'ebay', 'etsy', 'best buy', 'apple store', 'clothing', 'fashion', 'nike', 'nordstrom', 'macy', 'kids foot locker', 'five below', 'today s vision', 'temu', 'the home depot', 'walmart.com', 'inter-state studio', 'steam', 'steamgames', 'wl *steam', 'nintendo', 'cvs', 'walgreens'], total: 0, count: 0, color: '#06b6d4' },
+        'Loans & Debt': { keywords: ['loan', 'student', 'credit card', 'acima', 'figloans', 'financing', 'capital one', 'chase', 'amex', 'overdraft fee'], total: 0, count: 0, color: '#f43f5e' },
+        'Transfers': { keywords: ['online transfer to', 'zelle to', 'atm withdrawal', 'non-wells fargo atm'], total: 0, count: 0, color: '#8b5cf6' },
+        'Entertainment': { keywords: ['amc 2430', 'amc 9640', 'amc online', 'movies', 'ppg 307', 'audible', 'google *boo', 'google *hily', 'hily datin', 'myfico', 'xactus', 'towneplace'], total: 0, count: 0, color: '#14b8a6' },
+        'Healthcare': { keywords: ['pharmacy', 'cvs/pharmacy', 'walgreens', 'doctor', 'medical', 'hospital', 'dental', 'health', 'rx', 'prescription'], total: 0, count: 0, color: '#ef4444' },
+        'Storage': { keywords: ['public storage', 'storage'], total: 0, count: 0, color: '#78716c' },
         'Other': { keywords: [], total: 0, count: 0, color: '#6b7280' }
     };
 
