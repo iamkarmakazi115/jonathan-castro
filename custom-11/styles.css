@@ -1,0 +1,1199 @@
+/* ============================================================
+   CASHFLOW COMMAND - STYLES
+   Theme: Dark fintech with emerald accents
+   ============================================================ */
+
+/* ---------- IMPORTS ---------- */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&family=Playfair+Display:wght@700;800&display=swap');
+
+/* ---------- CSS VARIABLES ---------- */
+:root {
+    /* Core palette */
+    --cf-bg-deep:       #0a0e17;
+    --cf-bg-surface:    #111827;
+    --cf-bg-card:       #1a2236;
+    --cf-bg-card-hover: #1f2a40;
+    --cf-bg-elevated:   #243049;
+
+    /* Accent — emerald / money green */
+    --cf-accent:        #10b981;
+    --cf-accent-light:  #34d399;
+    --cf-accent-dim:    rgba(16, 185, 129, 0.15);
+    --cf-accent-glow:   rgba(16, 185, 129, 0.35);
+
+    /* Semantic */
+    --cf-income:        #10b981;
+    --cf-expense:       #ef4444;
+    --cf-warning:       #f59e0b;
+    --cf-info:          #3b82f6;
+
+    /* Text */
+    --cf-text-primary:  #f1f5f9;
+    --cf-text-secondary:#94a3b8;
+    --cf-text-muted:    #64748b;
+    --cf-text-dim:      #475569;
+
+    /* Borders */
+    --cf-border:        rgba(148, 163, 184, 0.08);
+    --cf-border-accent: rgba(16, 185, 129, 0.25);
+
+    /* Fonts */
+    --cf-font-body:     'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --cf-font-display:  'Playfair Display', Georgia, serif;
+    --cf-font-mono:     'JetBrains Mono', 'Fira Code', monospace;
+
+    /* Spacing */
+    --cf-gap:           1.25rem;
+    --cf-radius:        12px;
+    --cf-radius-sm:     8px;
+    --cf-radius-lg:     16px;
+
+    /* Transitions */
+    --cf-transition:    0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ---------- RESET & BASE ---------- */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--cf-font-body);
+    background: var(--cf-bg-deep);
+    color: var(--cf-text-primary);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+}
+
+/* Subtle noise texture overlay */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    opacity: 0.4;
+}
+
+/* Push content below fixed nav */
+body {
+    padding-top: 70px;
+}
+
+/* ============================================================
+   HERO / STATUS BAR
+   ============================================================ */
+.cf-hero {
+    position: relative;
+    z-index: 1;
+    background: linear-gradient(135deg, var(--cf-bg-surface) 0%, var(--cf-bg-card) 100%);
+    border-bottom: 1px solid var(--cf-border);
+    padding: 1.5rem 2rem;
+}
+
+.cf-hero-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.cf-hero-title-group {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.cf-hero-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--cf-radius);
+    background: var(--cf-accent-dim);
+    border: 1px solid var(--cf-border-accent);
+    display: grid;
+    place-items: center;
+    color: var(--cf-accent);
+    box-shadow: 0 0 20px var(--cf-accent-glow);
+}
+
+.cf-hero-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.cf-hero-title {
+    font-family: var(--cf-font-display);
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--cf-text-primary), var(--cf-accent-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.cf-hero-subtitle {
+    font-size: 0.85rem;
+    color: var(--cf-text-secondary);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.cf-hero-status {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.cf-status-pill {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.85rem;
+    border-radius: 999px;
+    background: var(--cf-bg-card);
+    border: 1px solid var(--cf-border);
+    font-size: 0.8rem;
+    color: var(--cf-text-secondary);
+}
+
+.cf-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--cf-text-muted);
+    transition: background var(--cf-transition);
+}
+
+.cf-status-pill.online .cf-status-dot {
+    background: var(--cf-accent);
+    box-shadow: 0 0 8px var(--cf-accent-glow);
+    animation: pulse-dot 2s ease-in-out infinite;
+}
+
+.cf-status-pill.offline .cf-status-dot {
+    background: var(--cf-expense);
+}
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.cf-last-sync {
+    font-size: 0.75rem;
+    color: var(--cf-text-muted);
+    font-family: var(--cf-font-mono);
+}
+
+/* ============================================================
+   MAIN CONTENT
+   ============================================================ */
+.cf-main {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: var(--cf-gap) 2rem 4rem;
+}
+
+/* ============================================================
+   CONNECTION PANEL (no accounts state)
+   ============================================================ */
+.cf-connect-panel {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 60vh;
+    padding: 2rem;
+}
+
+.cf-connect-card {
+    text-align: center;
+    max-width: 520px;
+    padding: 3rem 2.5rem;
+    background: var(--cf-bg-card);
+    border-radius: var(--cf-radius-lg);
+    border: 1px solid var(--cf-border);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    animation: fadeUp 0.6s ease-out;
+}
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.cf-connect-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--cf-accent-dim);
+    border: 2px solid var(--cf-border-accent);
+    display: grid;
+    place-items: center;
+    margin: 0 auto 1.5rem;
+    color: var(--cf-accent);
+    box-shadow: 0 0 40px var(--cf-accent-glow);
+}
+
+.cf-connect-icon svg {
+    width: 36px;
+    height: 36px;
+}
+
+.cf-connect-title {
+    font-family: var(--cf-font-display);
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+}
+
+.cf-connect-desc {
+    color: var(--cf-text-secondary);
+    font-size: 0.95rem;
+    margin-bottom: 2rem;
+    line-height: 1.7;
+}
+
+.cf-connect-badges {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+.cf-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    background: var(--cf-bg-elevated);
+    border: 1px solid var(--cf-border);
+    font-size: 0.75rem;
+    color: var(--cf-text-muted);
+}
+
+.cf-badge svg {
+    width: 14px;
+    height: 14px;
+    color: var(--cf-accent);
+}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.cf-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--cf-font-body);
+    font-weight: 600;
+    border: none;
+    border-radius: var(--cf-radius-sm);
+    cursor: pointer;
+    transition: all var(--cf-transition);
+    white-space: nowrap;
+}
+
+.cf-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+.cf-btn-primary {
+    background: var(--cf-accent);
+    color: #fff;
+    padding: 0.65rem 1.25rem;
+    font-size: 0.9rem;
+}
+
+.cf-btn-primary:hover {
+    background: var(--cf-accent-light);
+    box-shadow: 0 4px 20px var(--cf-accent-glow);
+    transform: translateY(-1px);
+}
+
+.cf-btn-outline {
+    background: transparent;
+    color: var(--cf-text-secondary);
+    border: 1px solid var(--cf-border);
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+}
+
+.cf-btn-outline:hover {
+    background: var(--cf-bg-card);
+    color: var(--cf-text-primary);
+    border-color: var(--cf-border-accent);
+}
+
+.cf-btn-ghost {
+    background: transparent;
+    color: var(--cf-text-muted);
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8rem;
+}
+
+.cf-btn-ghost:hover {
+    color: var(--cf-accent);
+    background: var(--cf-accent-dim);
+}
+
+.cf-btn-lg {
+    padding: 0.85rem 2rem;
+    font-size: 1rem;
+}
+
+.cf-btn-sm svg {
+    width: 16px;
+    height: 16px;
+}
+
+.cf-btn.loading {
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.cf-btn.loading::after {
+    content: '';
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    margin-left: 0.5rem;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ============================================================
+   ACTION BAR
+   ============================================================ */
+.cf-action-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: var(--cf-gap);
+}
+
+.cf-action-left,
+.cf-action-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* ============================================================
+   FORM CONTROLS
+   ============================================================ */
+.cf-select,
+.cf-input {
+    font-family: var(--cf-font-body);
+    font-size: 0.85rem;
+    color: var(--cf-text-primary);
+    background: var(--cf-bg-card);
+    border: 1px solid var(--cf-border);
+    border-radius: var(--cf-radius-sm);
+    padding: 0.5rem 0.75rem;
+    transition: border-color var(--cf-transition);
+    outline: none;
+}
+
+.cf-select:focus,
+.cf-input:focus {
+    border-color: var(--cf-accent);
+    box-shadow: 0 0 0 3px var(--cf-accent-dim);
+}
+
+.cf-select {
+    cursor: pointer;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%2394a3b8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    padding-right: 2rem;
+}
+
+.cf-select-sm {
+    padding: 0.4rem 2rem 0.4rem 0.6rem;
+    font-size: 0.8rem;
+}
+
+/* ============================================================
+   ACCOUNT CARDS
+   ============================================================ */
+.cf-accounts-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: var(--cf-gap);
+    margin-bottom: var(--cf-gap);
+}
+
+.cf-account-card {
+    background: var(--cf-bg-card);
+    border: 1px solid var(--cf-border);
+    border-radius: var(--cf-radius);
+    padding: 1.25rem;
+    transition: all var(--cf-transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.cf-account-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--cf-accent);
+    opacity: 0;
+    transition: opacity var(--cf-transition);
+}
+
+.cf-account-card:hover {
+    border-color: var(--cf-border-accent);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.cf-account-card:hover::before {
+    opacity: 1;
+}
+
+.cf-acct-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.cf-acct-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--cf-radius-sm);
+    display: grid;
+    place-items: center;
+    font-size: 0.85rem;
+}
+
+.cf-acct-icon.checking {
+    background: rgba(16, 185, 129, 0.12);
+    color: var(--cf-accent);
+}
+
+.cf-acct-icon.savings {
+    background: rgba(59, 130, 246, 0.12);
+    color: var(--cf-info);
+}
+
+.cf-acct-icon.credit {
+    background: rgba(239, 68, 68, 0.12);
+    color: var(--cf-expense);
+}
+
+.cf-acct-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.cf-acct-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.cf-acct-type {
+    font-size: 0.75rem;
+    color: var(--cf-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.cf-acct-balance {
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-family: var(--cf-font-mono);
+    letter-spacing: -0.02em;
+}
+
+.cf-acct-available {
+    font-size: 0.8rem;
+    color: var(--cf-text-muted);
+    margin-top: 0.25rem;
+}
+
+/* ============================================================
+   NET WORTH BANNER
+   ============================================================ */
+.cf-networth-banner {
+    text-align: center;
+    padding: 1.5rem;
+    margin-bottom: var(--cf-gap);
+    background: linear-gradient(135deg, var(--cf-bg-card) 0%, var(--cf-bg-elevated) 100%);
+    border: 1px solid var(--cf-border);
+    border-radius: var(--cf-radius);
+    position: relative;
+    overflow: hidden;
+}
+
+.cf-networth-banner::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, var(--cf-accent-glow) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.cf-networth-label {
+    font-size: 0.8rem;
+    color: var(--cf-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.25rem;
+}
+
+.cf-networth-value {
+    font-family: var(--cf-font-display);
+    font-size: 2.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--cf-text-primary), var(--cf-accent-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    position: relative;
+    z-index: 1;
+}
+
+.cf-networth-breakdown {
+    font-size: 0.85rem;
+    color: var(--cf-text-secondary);
+    margin-top: 0.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+.cf-nw-sep {
+    margin: 0 0.5rem;
+    color: var(--cf-text-dim);
+}
+
+/* ============================================================
+   MONTHLY SNAPSHOT
+   ============================================================ */
+.cf-snapshot-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--cf-gap);
+    margin-bottom: var(--cf-gap);
+}
+
+.cf-snapshot-card {
+    background: var(--cf-bg-card);
+    border: 1px solid var(--cf-border);
+    border-radius: var(--cf-radius);
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.cf-snap-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--cf-radius-sm);
+    display: grid;
+    place-items: center;
+}
+
+.cf-snap-icon svg {
+    width: 22px;
+    height: 22px;
+}
+
+.cf-snap-income .cf-snap-icon {
+    background: rgba(16, 185, 129, 0.12);
+    color: var(--cf-income);
+}
+
+.cf-snap-spending .cf-snap-icon {
+    background: rgba(239, 68, 68, 0.12);
+    color: var(--cf-expense);
+}
+
+.cf-snap-net .cf-snap-icon {
+    background: rgba(59, 130, 246, 0.12);
+    color: var(--cf-info);
+}
+
+.cf-snap-label {
+    font-size: 0.8rem;
+    color: var(--cf-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.cf-snap-value {
+    font-size: 1.35rem;
+    font-weight: 700;
+    font-family: var(--cf-font-mono);
+}
+
+/* ============================================================
+   CHARTS
+   ============================================================ */
+.cf-charts-row {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: var(--cf-gap);
+    margin-bottom: var(--cf-gap);
+}
+
+.cf-chart-card {
+    background: var(--cf-bg-card);
+    border: 1px solid var(--cf-border);
+    border-radius: var(--cf-radius);
+    padding: 1.25rem;
+}
+
+.cf-chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.cf-chart-title {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.cf-chart-body {
+    position: relative;
+    height: 280px;
+}
+
+.cf-chart-body canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.cf-chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    justify-content: center;
+}
+
+.cf-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    color: var(--cf-text-secondary);
+}
+
+.cf-legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+}
+
+/* ============================================================
+   SECTION CARDS
+   ============================================================ */
+.cf-section-card {
+    background: var(--cf-bg-card);
+    border: 1px solid var(--cf-border);
+    border-radius: var(--cf-radius);
+    padding: 1.25rem;
+    margin-bottom: var(--cf-gap);
+}
+
+.cf-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--cf-border);
+}
+
+.cf-section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.cf-section-title svg {
+    width: 20px;
+    height: 20px;
+    color: var(--cf-accent);
+}
+
+/* ============================================================
+   BUDGET PROGRESS BARS
+   ============================================================ */
+.cf-budget-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.cf-budget-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.cf-budget-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.cf-budget-name {
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.cf-budget-amounts {
+    font-size: 0.8rem;
+    color: var(--cf-text-secondary);
+    font-family: var(--cf-font-mono);
+}
+
+.cf-budget-bar-bg {
+    width: 100%;
+    height: 10px;
+    background: var(--cf-bg-elevated);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.cf-budget-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.5s ease-out;
+}
+
+.cf-budget-bar-fill.green {
+    background: linear-gradient(90deg, #059669, var(--cf-accent));
+}
+
+.cf-budget-bar-fill.yellow {
+    background: linear-gradient(90deg, #d97706, var(--cf-warning));
+}
+
+.cf-budget-bar-fill.red {
+    background: linear-gradient(90deg, #dc2626, var(--cf-expense));
+}
+
+/* ============================================================
+   TRANSACTIONS TABLE
+   ============================================================ */
+.cf-txn-controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.cf-txn-table-wrap {
+    overflow-x: auto;
+}
+
+.cf-txn-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.cf-txn-table th {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--cf-text-muted);
+    padding: 0.6rem 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--cf-border);
+}
+
+.cf-txn-table td {
+    padding: 0.65rem 0.75rem;
+    font-size: 0.87rem;
+    border-bottom: 1px solid var(--cf-border);
+    color: var(--cf-text-secondary);
+}
+
+.cf-txn-table tbody tr:hover {
+    background: var(--cf-bg-card-hover);
+}
+
+.cf-txn-table .cf-text-right {
+    text-align: right;
+}
+
+.cf-txn-amount-pos {
+    color: var(--cf-income);
+    font-family: var(--cf-font-mono);
+    font-weight: 600;
+}
+
+.cf-txn-amount-neg {
+    color: var(--cf-expense);
+    font-family: var(--cf-font-mono);
+    font-weight: 600;
+}
+
+.cf-txn-category {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    background: var(--cf-bg-elevated);
+    font-size: 0.75rem;
+    color: var(--cf-text-secondary);
+}
+
+.cf-txn-date {
+    font-family: var(--cf-font-mono);
+    font-size: 0.8rem;
+    color: var(--cf-text-muted);
+}
+
+.cf-txn-pagination {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.cf-page-btn {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.8rem;
+    background: var(--cf-bg-elevated);
+    color: var(--cf-text-secondary);
+    border: 1px solid var(--cf-border);
+    border-radius: var(--cf-radius-sm);
+    cursor: pointer;
+    transition: all var(--cf-transition);
+}
+
+.cf-page-btn:hover,
+.cf-page-btn.active {
+    background: var(--cf-accent-dim);
+    border-color: var(--cf-accent);
+    color: var(--cf-accent);
+}
+
+/* ============================================================
+   GOALS
+   ============================================================ */
+.cf-goals-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--cf-gap);
+}
+
+.cf-goal-card {
+    background: var(--cf-bg-elevated);
+    border-radius: var(--cf-radius);
+    padding: 1.25rem;
+    text-align: center;
+}
+
+.cf-goal-ring-wrap {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 1rem;
+}
+
+.cf-goal-ring-wrap svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.cf-goal-ring-bg {
+    fill: none;
+    stroke: var(--cf-bg-card);
+    stroke-width: 8;
+}
+
+.cf-goal-ring-fill {
+    fill: none;
+    stroke: var(--cf-accent);
+    stroke-width: 8;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.8s ease-out;
+}
+
+.cf-goal-percent {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-family: var(--cf-font-mono);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--cf-accent);
+}
+
+.cf-goal-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+}
+
+.cf-goal-amounts {
+    font-size: 0.8rem;
+    color: var(--cf-text-muted);
+    font-family: var(--cf-font-mono);
+}
+
+/* ============================================================
+   MODALS
+   ============================================================ */
+.cf-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+}
+
+.cf-modal-overlay.active {
+    display: flex;
+}
+
+.cf-modal {
+    background: var(--cf-bg-surface);
+    border: 1px solid var(--cf-border);
+    border-radius: var(--cf-radius-lg);
+    width: 100%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.cf-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem;
+    border-bottom: 1px solid var(--cf-border);
+}
+
+.cf-modal-header h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.cf-modal-close {
+    background: none;
+    border: none;
+    color: var(--cf-text-muted);
+    font-size: 1.5rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0.25rem;
+    transition: color var(--cf-transition);
+}
+
+.cf-modal-close:hover {
+    color: var(--cf-expense);
+}
+
+.cf-modal-body {
+    padding: 1.25rem;
+}
+
+.cf-budget-form,
+.cf-goal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.cf-budget-existing {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.cf-budget-existing-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0.75rem;
+    background: var(--cf-bg-card);
+    border-radius: var(--cf-radius-sm);
+}
+
+.cf-budget-existing-item .cf-delete-btn {
+    background: none;
+    border: none;
+    color: var(--cf-text-muted);
+    cursor: pointer;
+    padding: 0.25rem;
+}
+
+.cf-budget-existing-item .cf-delete-btn:hover {
+    color: var(--cf-expense);
+}
+
+/* ============================================================
+   TOAST NOTIFICATIONS
+   ============================================================ */
+.cf-toast-container {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.cf-toast {
+    padding: 0.75rem 1.25rem;
+    border-radius: var(--cf-radius-sm);
+    font-size: 0.85rem;
+    font-weight: 500;
+    min-width: 280px;
+    animation: slideInRight 0.3s ease-out;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes slideInRight {
+    from { opacity: 0; transform: translateX(40px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.cf-toast.success {
+    background: var(--cf-accent);
+    color: #fff;
+}
+
+.cf-toast.error {
+    background: var(--cf-expense);
+    color: #fff;
+}
+
+.cf-toast.info {
+    background: var(--cf-info);
+    color: #fff;
+}
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+.cf-empty-state {
+    text-align: center;
+    padding: 2rem;
+    color: var(--cf-text-muted);
+    font-size: 0.9rem;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 1024px) {
+    .cf-charts-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    body {
+        padding-top: 60px;
+    }
+
+    .cf-hero {
+        padding: 1rem 1.25rem;
+    }
+
+    .cf-hero-title {
+        font-size: 1.3rem;
+    }
+
+    .cf-main {
+        padding: var(--cf-gap) 1rem 3rem;
+    }
+
+    .cf-snapshot-row {
+        grid-template-columns: 1fr;
+    }
+
+    .cf-accounts-row {
+        grid-template-columns: 1fr;
+    }
+
+    .cf-networth-value {
+        font-size: 1.75rem;
+    }
+
+    .cf-section-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .cf-txn-controls {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .cf-txn-controls .cf-input,
+    .cf-txn-controls .cf-select {
+        width: 100%;
+    }
+
+    .cf-action-bar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .cf-hero-status {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+@media (max-width: 480px) {
+    .cf-connect-card {
+        padding: 2rem 1.5rem;
+    }
+
+    .cf-connect-title {
+        font-size: 1.35rem;
+    }
+
+    .cf-chart-body {
+        height: 220px;
+    }
+}
