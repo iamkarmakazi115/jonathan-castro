@@ -87,6 +87,11 @@ const SITE_CONFIG = {
             id: 'custom-10',
             label: 'Market Pulse',
             href: '/custom-10/'
+        },
+        {
+            id: 'custom-11',
+            label: 'CashFlow Command',
+            href: '/custom-11/'
         }
     ]
 };
