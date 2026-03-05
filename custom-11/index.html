@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.plaid.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://budget.jonathan-castro.com https://cdn.plaid.com https://production.plaid.com https://sandbox.plaid.com; img-src 'self' data: https:; frame-src https://cdn.plaid.com;">
     <title>CashFlow Command | Jonathan Castro</title>
     <link rel="icon" href="/assets/KarmakazifaviconICO.ico" type="image/x-icon">
 
@@ -139,34 +140,6 @@
                 </div>
             </div>
 
-            <!-- Income Sources Section -->
-            <div class="cf-section-card" id="incomeSection">
-                <div class="cf-section-header">
-                    <h3 class="cf-section-title"><i data-lucide="banknote"></i> Income Sources</h3>
-                    <div class="cf-section-actions">
-                        <button class="cf-btn cf-btn-ghost cf-btn-sm" id="detectIncomeBtn" title="Auto-detect from transactions">
-                            <i data-lucide="scan"></i> Detect
-                        </button>
-                        <button class="cf-btn cf-btn-ghost cf-btn-sm" id="addIncomeBtn">
-                            <i data-lucide="plus"></i> Add
-                        </button>
-                    </div>
-                </div>
-                <div class="cf-income-summary" id="incomeSummary">
-                    <div class="cf-income-stat">
-                        <span class="cf-income-stat-label">Expected This Month</span>
-                        <span class="cf-income-stat-value" id="incomeExpected">$0.00</span>
-                    </div>
-                    <div class="cf-income-stat">
-                        <span class="cf-income-stat-label">Received</span>
-                        <span class="cf-income-stat-value" id="incomeReceived">$0.00</span>
-                    </div>
-                </div>
-                <div class="cf-income-list" id="incomeList">
-                    <div class="cf-empty-state">No income sources tracked yet. Click Detect or Add to get started.</div>
-                </div>
-            </div>
-
             <!-- Charts Row -->
             <div class="cf-charts-row">
                 <!-- Spending by Category (Donut) -->
@@ -201,29 +174,6 @@
                 </div>
                 <div class="cf-budget-list" id="budgetList">
                     <div class="cf-empty-state">No budgets set yet. Click Manage to create one.</div>
-                </div>
-            </div>
-
-            <!-- Bills & Subscriptions -->
-            <div class="cf-section-card" id="billsSection">
-                <div class="cf-section-header">
-                    <h3 class="cf-section-title"><i data-lucide="calendar-check"></i> Bills & Subscriptions</h3>
-                    <div class="cf-section-actions">
-                        <button class="cf-btn cf-btn-ghost cf-btn-sm" id="detectBillsBtn" title="Auto-detect from transactions">
-                            <i data-lucide="scan"></i> Detect
-                        </button>
-                        <button class="cf-btn cf-btn-ghost cf-btn-sm" id="addBillBtn">
-                            <i data-lucide="plus"></i> Add Bill
-                        </button>
-                    </div>
-                </div>
-                <div class="cf-bills-legend">
-                    <span class="cf-bill-legend-item"><span class="cf-bill-dot paid"></span> Paid</span>
-                    <span class="cf-bill-legend-item"><span class="cf-bill-dot upcoming"></span> Upcoming</span>
-                    <span class="cf-bill-legend-item"><span class="cf-bill-dot overdue"></span> Overdue</span>
-                </div>
-                <div class="cf-bills-list" id="billsList">
-                    <div class="cf-empty-state">No bills tracked yet. Click Detect to scan your transactions or Add Bill manually.</div>
                 </div>
             </div>
 
@@ -315,133 +265,6 @@
                         <i data-lucide="save"></i> Save Goal
                     </button>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ============================================================ -->
-    <!-- BILL MODAL                                                    -->
-    <!-- ============================================================ -->
-    <div class="cf-modal-overlay" id="billModal">
-        <div class="cf-modal">
-            <div class="cf-modal-header">
-                <h3 id="billModalTitle">Add Bill</h3>
-                <button class="cf-modal-close" id="closeBillModal">&times;</button>
-            </div>
-            <div class="cf-modal-body">
-                <div class="cf-form-grid">
-                    <div class="cf-form-group">
-                        <label class="cf-label">Bill Name</label>
-                        <input type="text" class="cf-input" id="billName" placeholder="e.g. Netflix, Car Insurance">
-                    </div>
-                    <div class="cf-form-group">
-                        <label class="cf-label">Amount</label>
-                        <input type="number" class="cf-input" id="billAmount" placeholder="0.00" step="0.01">
-                    </div>
-                    <div class="cf-form-group">
-                        <label class="cf-label">Due Day of Month</label>
-                        <input type="number" class="cf-input" id="billDueDay" placeholder="15" min="1" max="31">
-                    </div>
-                    <div class="cf-form-group">
-                        <label class="cf-label">Frequency</label>
-                        <select class="cf-select" id="billFrequency">
-                            <option value="monthly">Monthly</option>
-                            <option value="weekly">Weekly</option>
-                            <option value="biweekly">Bi-weekly</option>
-                            <option value="quarterly">Quarterly</option>
-                            <option value="yearly">Yearly</option>
-                        </select>
-                    </div>
-                    <div class="cf-form-group">
-                        <label class="cf-label">Category</label>
-                        <select class="cf-select" id="billCategory">
-                            <option value="streaming">Streaming</option>
-                            <option value="insurance">Insurance</option>
-                            <option value="utilities">Utilities</option>
-                            <option value="phone">Phone</option>
-                            <option value="internet">Internet</option>
-                            <option value="gym">Gym / Fitness</option>
-                            <option value="rent">Rent / Mortgage</option>
-                            <option value="car">Car / Auto</option>
-                            <option value="subscription">Subscription</option>
-                            <option value="loan">Loan Payment</option>
-                            <option value="other">Other</option>
-                        </select>
-                    </div>
-                    <div class="cf-form-group cf-form-check">
-                        <label class="cf-checkbox-label">
-                            <input type="checkbox" id="billAutoPay"> Auto-Pay Enabled
-                        </label>
-                    </div>
-                </div>
-                <input type="hidden" id="billEditId" value="">
-                <button class="cf-btn cf-btn-primary" id="saveBillBtn" style="width:100%;margin-top:1rem;">
-                    <i data-lucide="save"></i> Save Bill
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ============================================================ -->
-    <!-- INCOME SOURCE MODAL                                           -->
-    <!-- ============================================================ -->
-    <div class="cf-modal-overlay" id="incomeModal">
-        <div class="cf-modal">
-            <div class="cf-modal-header">
-                <h3 id="incomeModalTitle">Add Income Source</h3>
-                <button class="cf-modal-close" id="closeIncomeModal">&times;</button>
-            </div>
-            <div class="cf-modal-body">
-                <div class="cf-form-grid">
-                    <div class="cf-form-group">
-                        <label class="cf-label">Source Name</label>
-                        <input type="text" class="cf-input" id="incomeName" placeholder="e.g. Employer, Side Gig">
-                    </div>
-                    <div class="cf-form-group">
-                        <label class="cf-label">Amount</label>
-                        <input type="number" class="cf-input" id="incomeAmount" placeholder="0.00" step="0.01">
-                    </div>
-                    <div class="cf-form-group">
-                        <label class="cf-label">Frequency</label>
-                        <select class="cf-select" id="incomeFrequency">
-                            <option value="biweekly">Bi-weekly</option>
-                            <option value="weekly">Weekly</option>
-                            <option value="monthly">Monthly</option>
-                            <option value="semimonthly">Semi-monthly</option>
-                        </select>
-                    </div>
-                    <div class="cf-form-group">
-                        <label class="cf-label">Last Deposit Date</label>
-                        <input type="date" class="cf-input" id="incomeLastDate">
-                    </div>
-                    <div class="cf-form-group">
-                        <label class="cf-label">Next Expected Date</label>
-                        <input type="date" class="cf-input" id="incomeNextDate">
-                    </div>
-                </div>
-                <input type="hidden" id="incomeEditId" value="">
-                <button class="cf-btn cf-btn-primary" id="saveIncomeBtn" style="width:100%;margin-top:1rem;">
-                    <i data-lucide="save"></i> Save Income Source
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ============================================================ -->
-    <!-- DETECTED ITEMS MODAL (for auto-detection results)             -->
-    <!-- ============================================================ -->
-    <div class="cf-modal-overlay" id="detectedModal">
-        <div class="cf-modal cf-modal-lg">
-            <div class="cf-modal-header">
-                <h3 id="detectedModalTitle">Detected Items</h3>
-                <button class="cf-modal-close" id="closeDetectedModal">&times;</button>
-            </div>
-            <div class="cf-modal-body">
-                <p class="cf-detected-desc" id="detectedDesc">Select items to add:</p>
-                <div class="cf-detected-list" id="detectedList"></div>
-                <button class="cf-btn cf-btn-primary" id="addDetectedBtn" style="width:100%;margin-top:1rem;">
-                    <i data-lucide="plus-circle"></i> Add Selected
-                </button>
             </div>
         </div>
     </div>
