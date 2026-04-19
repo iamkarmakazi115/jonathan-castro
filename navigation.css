@@ -1,0 +1,319 @@
+/**
+ * ============================================================
+ * JONATHAN CASTRO - SHARED NAVIGATION STYLES v2
+ * ============================================================
+ * Global nav + design tokens shared across all pages.
+ * Tokens are the palette for the whole site, not just the nav.
+ * ============================================================
+ */
+
+/* =============================================
+   DESIGN TOKENS
+   ============================================= */
+:root {
+    /* Ember palette */
+    --ember:         #ff6b35;
+    --ember-bright:  #ff8551;
+    --ember-deep:    #d44a20;
+    --ember-glow:    rgba(255, 107, 53, 0.45);
+    --ember-soft:    rgba(255, 107, 53, 0.12);
+
+    /* Surfaces */
+    --bg-deep:       #050505;
+    --bg-base:       #0a0a0a;
+    --bg-elevated:   #121212;
+    --nav-bg:        rgba(10, 10, 10, 0.78);
+    --nav-bg-solid:  rgba(10, 10, 10, 0.95);
+
+    /* Text */
+    --text:          #f4f4f5;
+    --text-dim:      #a0a0a6;
+    --text-faint:    #6b6b72;
+
+    /* Borders */
+    --border:        rgba(255, 255, 255, 0.08);
+    --border-ember:  rgba(255, 107, 53, 0.28);
+
+    /* Motion */
+    --ease:          cubic-bezier(0.22, 1, 0.36, 1);
+    --fast:          180ms var(--ease);
+    --med:           280ms var(--ease);
+    --slow:          420ms var(--ease);
+
+    /* Layout */
+    --nav-height:    72px;
+    --nav-pad:       1.5rem;
+
+    /* Type */
+    --font-display:  'Rajdhani', 'Segoe UI', system-ui, sans-serif;
+    --font-mono:     'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+    --font-body:     'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+
+/* =============================================
+   NAV CONTAINER
+   ============================================= */
+.main-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background: var(--nav-bg);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    border-bottom: 1px solid var(--border);
+    transition: background var(--med),
+                border-color var(--med),
+                box-shadow var(--med);
+}
+
+.main-nav.nav-scrolled {
+    background: var(--nav-bg-solid);
+    border-bottom-color: var(--border-ember);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55),
+                0 1px 0 var(--ember-soft) inset;
+}
+
+.nav-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0 var(--nav-pad);
+    height: var(--nav-height);
+    gap: 1rem;
+}
+
+/* =============================================
+   NAV LINKS
+   ============================================= */
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.nav-item {
+    position: relative;
+}
+
+.nav-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.55rem 1rem;
+    color: var(--text);
+    text-decoration: none;
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 0.92rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-radius: 6px;
+    position: relative;
+    transition: color var(--fast), background var(--fast),
+                transform var(--fast), text-shadow var(--fast);
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 6px;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg,
+                transparent, var(--ember) 30%, var(--ember) 70%, transparent);
+    transition: width var(--med), left var(--med);
+}
+
+.nav-link:hover {
+    color: var(--ember-bright);
+    background: var(--ember-soft);
+    transform: translateY(-1px);
+    text-shadow: 0 0 12px var(--ember-glow);
+}
+
+.nav-link:hover::after,
+.nav-link.active::after {
+    width: 75%;
+    left: 12.5%;
+}
+
+.nav-link.active {
+    color: var(--ember);
+    text-shadow: 0 0 10px var(--ember-glow);
+}
+
+.nav-link:focus-visible {
+    outline: 2px solid var(--ember);
+    outline-offset: 2px;
+}
+
+/* =============================================
+   LOGO
+   ============================================= */
+.nav-logo {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    transition: transform var(--fast), filter var(--fast);
+}
+
+.nav-logo:hover {
+    transform: scale(1.06);
+    filter: drop-shadow(0 0 14px var(--ember-glow));
+}
+
+.nav-logo:focus-visible {
+    outline: 2px solid var(--ember);
+    outline-offset: 4px;
+    border-radius: 50%;
+}
+
+.nav-logo img {
+    height: 50px;
+    width: auto;
+    object-fit: contain;
+    display: block;
+}
+
+/* =============================================
+   MOBILE HAMBURGER
+   ============================================= */
+.mobile-menu-btn {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    width: 42px;
+    height: 42px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    padding: 8px;
+    transition: border-color var(--fast), background var(--fast);
+}
+
+.mobile-menu-btn:hover {
+    border-color: var(--ember);
+    background: var(--ember-soft);
+}
+
+.mobile-menu-btn:focus-visible {
+    outline: 2px solid var(--ember);
+    outline-offset: 2px;
+}
+
+.hamburger-line {
+    display: block;
+    width: 22px;
+    height: 2px;
+    background: var(--text);
+    border-radius: 2px;
+    transition: transform var(--med), opacity var(--fast), background var(--fast);
+}
+
+.mobile-menu-btn.menu-open .hamburger-line {
+    background: var(--ember);
+}
+
+.mobile-menu-btn.menu-open .hamburger-line:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+}
+
+.mobile-menu-btn.menu-open .hamburger-line:nth-child(2) {
+    opacity: 0;
+}
+
+.mobile-menu-btn.menu-open .hamburger-line:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
+}
+
+/* =============================================
+   RESPONSIVE - TABLET
+   ============================================= */
+@media (max-width: 1024px) {
+    .nav-link { padding: 0.5rem 0.7rem; font-size: 0.82rem; letter-spacing: 0.06em; }
+    .nav-container { padding: 0 1rem; }
+}
+
+/* =============================================
+   RESPONSIVE - MOBILE
+   ============================================= */
+@media (max-width: 768px) {
+    .mobile-menu-btn { display: flex; order: -1; }
+
+    .nav-links {
+        position: fixed;
+        top: var(--nav-height);
+        left: 0;
+        right: 0;
+        flex-direction: column;
+        background: var(--nav-bg-solid);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        padding: 0.5rem 0;
+        gap: 0;
+        transform: translateY(-10px);
+        opacity: 0;
+        visibility: hidden;
+        transition: transform var(--med), opacity var(--med), visibility var(--med);
+        border-bottom: 1px solid var(--border-ember);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+    }
+
+    .nav-links.nav-open { transform: translateY(0); opacity: 1; visibility: visible; }
+    .nav-item { width: 100%; }
+    .nav-link { padding: 1rem 2rem; text-align: center; border-radius: 0; border-bottom: 1px solid var(--border); }
+    .nav-link::after { display: none; }
+    .nav-link:hover { transform: none; }
+    .nav-logo img { height: 42px; }
+}
+
+/* =============================================
+   UTILITIES
+   ============================================= */
+body {
+    padding-top: var(--nav-height);
+    background: var(--bg-base);
+    color: var(--text);
+    font-family: var(--font-body);
+}
+
+/* Hero pages (full-bleed video bg) - nav floats transparent until scroll */
+body.no-nav-padding { padding-top: 0; }
+
+body.no-nav-padding .main-nav {
+    background: linear-gradient(to bottom, rgba(10, 10, 10, 0.6), transparent);
+    border-bottom-color: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+body.no-nav-padding .main-nav.nav-scrolled {
+    background: var(--nav-bg-solid);
+    border-bottom-color: var(--border-ember);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+}
+
+/* =============================================
+   REDUCED MOTION
+   ============================================= */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}

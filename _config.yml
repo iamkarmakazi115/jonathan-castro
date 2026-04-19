@@ -1,0 +1,30 @@
+# ============================================================
+# Jekyll configuration for jonathan-castro.com
+# ------------------------------------------------------------
+# This site is hand-coded HTML/CSS/JS. Jekyll is only used here
+# because GitHub Pages runs Jekyll by default. No layouts or
+# includes are used - Jekyll just copies files through.
+# ============================================================
+
+title:        Jonathan Castro
+description:  IT professional and security engineer. Homelab, security tools, and interactive dashboards.
+url:          https://jonathan-castro.com
+author:       Jonathan Castro
+
+# Include dotfile folder so ACME / Cloudflare challenge files ship through
+include:
+  - .well-known
+
+# Keep build artifacts and local-only files out of the deploy
+exclude:
+  - README.md
+  - "old website/"
+  - "*.md.bak"
+  - "node_modules/"
+  - "package.json"
+  - "package-lock.json"
+  - "Gemfile"
+  - "Gemfile.lock"
+
+# No plugins needed - static pass-through only
+plugins: []
