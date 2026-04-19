@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Tech News aggregator — AI, Cybersecurity, Microsoft, and IT headlines from 24 leading outlets. Refreshed every 5 minutes.">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#0a0a0a">
+
+    <title>Tech News — Jonathan Castro</title>
+
+    <link rel="icon" type="image/x-icon" href="/assets/KarmakazifaviconICO.ico">
+    <link rel="apple-touch-icon" href="/assets/KarmakaziLogo-512x512.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="/navigation.css">
+    <link rel="stylesheet" href="/tech-news/styles.css">
+</head>
+<body class="tech-news-page" data-tech-news-active-cat="ai">
+
+    <!-- Shared site navigation (populated by /navigation.js) -->
+    <div id="nav-placeholder"></div>
+
+    <!-- ================================================================
+         CONNECTION ERROR BANNER
+         JS toggles [hidden] via showConnectionError(true|false).
+         Fixed-position bottom banner per styles.css (Step 4C).
+         ================================================================ -->
+    <div class="tn-conn-error" data-tech-news="conn-error" role="alert" aria-live="assertive" hidden>
+        <div class="tn-conn-error__inner">
+            <span class="tn-conn-error__icon" aria-hidden="true">⚠</span>
+            <span class="tn-conn-error__msg">Connection error — could not reach the news service. Retrying automatically.</span>
+        </div>
+    </div>
+
+    <!-- ================================================================
+         MAIN
+         ================================================================ -->
+    <main class="tn-main" id="tn-main">
+
+        <!-- ============================================================
+             STICKY HEADER
+             Holds title/subtitle (JS-updated), LIVE pulse dot,
+             last-updated time, refresh button, reset-read button,
+             reset-status toast, and the tab strip.
+             ============================================================ -->
+        <header class="tn-header">
+            <div class="tn-header__inner">
+
+                <div class="tn-header__title-block">
+                    <div class="tn-header__title-row">
+                        <span class="tn-pulse" aria-hidden="true">
+                            <span class="tn-pulse__dot"></span>
+                            <span class="tn-pulse__label">LIVE</span>
+                        </span>
+                        <h1 class="tn-header__title" data-tech-news="category-title">Artificial Intelligence</h1>
+                    </div>
+                    <p class="tn-header__subtitle" data-tech-news="category-subtitle">Latest AI developments, research &amp; industry news</p>
+                </div>
+
+                <div class="tn-header__controls">
+                    <span class="tn-header__updated">
+                        <span class="tn-header__updated-label">Last update:</span>
+                        <time class="tn-header__updated-time" data-tech-news="last-updated">—</time>
+                    </span>
+
+                    <button type="button"
+                            class="tn-btn tn-refresh"
+                            data-tech-news="refresh-btn"
+                            aria-label="Refresh feeds for current category">
+                        <svg class="tn-refresh__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.74 10h-2.07A6 6 0 1 1 12 6a5.96 5.96 0 0 1 4.22 1.78L13 11h7V4l-2.35 2.35Z" fill="currentColor"/>
+                        </svg>
+                        <span class="tn-btn__label">Refresh</span>
+                    </button>
+
+                    <button type="button"
+                            class="tn-btn tn-btn--ghost tn-reset"
+                            data-tech-news="reset-read-btn"
+                            aria-label="Reset read article history">
+                        <svg class="tn-reset__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12Z" fill="currentColor"/>
+                        </svg>
+                        <span class="tn-btn__label">Reset Read</span>
+                    </button>
+
+                    <span class="tn-reset-status"
+                          data-tech-news="reset-status"
+                          role="status"
+                          aria-live="polite"
+                          aria-atomic="true"></span>
+                </div>
+
+            </div>
+
+            <!-- Tab strip (inside sticky header so it stays fixed) -->
+            <nav class="tn-tabs-wrap" aria-label="Category navigation">
+                <div class="tn-tabs"
+                     role="tablist"
+                     aria-label="Tech news categories"
+                     data-tech-news="tablist">
+
+                    <button type="button"
+                            class="tn-tab is-active"
+                            role="tab"
+                            id="tab-ai"
+                            data-tech-news-tab="ai"
+                            aria-selected="true"
+                            aria-controls="panel-ai"
+                            tabindex="0">
+                        <span class="tn-tab__dot" aria-hidden="true"></span>
+                        <span class="tn-tab__label">AI</span>
+                    </button>
+
+                    <button type="button"
+                            class="tn-tab"
+                            role="tab"
+                            id="tab-cybersecurity"
+                            data-tech-news-tab="cybersecurity"
+                            aria-selected="false"
+                            aria-controls="panel-cybersecurity"
+                            tabindex="-1">
+                        <span class="tn-tab__dot" aria-hidden="true"></span>
+                        <span class="tn-tab__label">Cybersecurity</span>
+                    </button>
+
+                    <button type="button"
+                            class="tn-tab"
+                            role="tab"
+                            id="tab-microsoft"
+                            data-tech-news-tab="microsoft"
+                            aria-selected="false"
+                            aria-controls="panel-microsoft"
+                            tabindex="-1">
+                        <span class="tn-tab__dot" aria-hidden="true"></span>
+                        <span class="tn-tab__label">Microsoft</span>
+                    </button>
+
+                    <button type="button"
+                            class="tn-tab"
+                            role="tab"
+                            id="tab-it"
+                            data-tech-news-tab="it"
+                            aria-selected="false"
+                            aria-controls="panel-it"
+                            tabindex="-1">
+                        <span class="tn-tab__dot" aria-hidden="true"></span>
+                        <span class="tn-tab__label">IT</span>
+                    </button>
+
+                </div>
+            </nav>
+
+        </header>
+
+        <!-- ============================================================
+             TAB PANELS
+             4 panels — only the AI panel is visible on first load.
+             Each panel contains (in render order):
+               - panel header w/ article-count
+               - panel-loading state (visible by default)
+               - panel-error state (hidden by default, contains retry)
+               - article-grid (hidden by default, JS populates)
+             scripts.js setPanelState() flips [hidden] across the trio.
+             ============================================================ -->
+        <section class="tn-panels">
+
+            <!-- ============== AI PANEL (default visible) ============== -->
+            <div class="tn-panel"
+                 role="tabpanel"
+                 id="panel-ai"
+                 data-tech-news-panel="ai"
+                 aria-labelledby="tab-ai">
+
+                <div class="tn-panel__header">
+                    <span class="tn-panel__count">
+                        <span class="tn-panel__count-num" data-tech-news="article-count">0</span>
+                        <span class="tn-panel__count-label">articles loaded</span>
+                    </span>
+                </div>
+
+                <div class="tn-panel__loading" data-tech-news="panel-loading">
+                    <div class="tn-spinner" aria-hidden="true"></div>
+                    <p class="tn-panel__loading-text">Loading articles…</p>
+                </div>
+
+                <div class="tn-panel__error" data-tech-news="panel-error" role="alert" hidden>
+                    <p class="tn-panel__error-text">Failed to load some feeds. Check your connection and retry.</p>
+                    <button type="button" class="tn-btn tn-btn--ghost" data-tech-news="panel-retry">Retry</button>
+                </div>
+
+                <div class="tn-grid" data-tech-news="article-grid" hidden></div>
+            </div>
+
+            <!-- ============== CYBERSECURITY PANEL ===================== -->
+            <div class="tn-panel"
+                 role="tabpanel"
+                 id="panel-cybersecurity"
+                 data-tech-news-panel="cybersecurity"
+                 aria-labelledby="tab-cybersecurity"
+                 hidden>
+
+                <div class="tn-panel__header">
+                    <span class="tn-panel__count">
+                        <span class="tn-panel__count-num" data-tech-news="article-count">0</span>
+                        <span class="tn-panel__count-label">articles loaded</span>
+                    </span>
+                </div>
+
+                <div class="tn-panel__loading" data-tech-news="panel-loading">
+                    <div class="tn-spinner" aria-hidden="true"></div>
+                    <p class="tn-panel__loading-text">Loading articles…</p>
+                </div>
+
+                <div class="tn-panel__error" data-tech-news="panel-error" role="alert" hidden>
+                    <p class="tn-panel__error-text">Failed to load some feeds. Check your connection and retry.</p>
+                    <button type="button" class="tn-btn tn-btn--ghost" data-tech-news="panel-retry">Retry</button>
+                </div>
+
+                <div class="tn-grid" data-tech-news="article-grid" hidden></div>
+            </div>
+
+            <!-- ============== MICROSOFT PANEL ========================= -->
+            <div class="tn-panel"
+                 role="tabpanel"
+                 id="panel-microsoft"
+                 data-tech-news-panel="microsoft"
+                 aria-labelledby="tab-microsoft"
+                 hidden>
+
+                <div class="tn-panel__header">
+                    <span class="tn-panel__count">
+                        <span class="tn-panel__count-num" data-tech-news="article-count">0</span>
+                        <span class="tn-panel__count-label">articles loaded</span>
+                    </span>
+                </div>
+
+                <div class="tn-panel__loading" data-tech-news="panel-loading">
+                    <div class="tn-spinner" aria-hidden="true"></div>
+                    <p class="tn-panel__loading-text">Loading articles…</p>
+                </div>
+
+                <div class="tn-panel__error" data-tech-news="panel-error" role="alert" hidden>
+                    <p class="tn-panel__error-text">Failed to load some feeds. Check your connection and retry.</p>
+                    <button type="button" class="tn-btn tn-btn--ghost" data-tech-news="panel-retry">Retry</button>
+                </div>
+
+                <div class="tn-grid" data-tech-news="article-grid" hidden></div>
+            </div>
+
+            <!-- ============== IT PANEL ================================ -->
+            <div class="tn-panel"
+                 role="tabpanel"
+                 id="panel-it"
+                 data-tech-news-panel="it"
+                 aria-labelledby="tab-it"
+                 hidden>
+
+                <div class="tn-panel__header">
+                    <span class="tn-panel__count">
+                        <span class="tn-panel__count-num" data-tech-news="article-count">0</span>
+                        <span class="tn-panel__count-label">articles loaded</span>
+                    </span>
+                </div>
+
+                <div class="tn-panel__loading" data-tech-news="panel-loading">
+                    <div class="tn-spinner" aria-hidden="true"></div>
+                    <p class="tn-panel__loading-text">Loading articles…</p>
+                </div>
+
+                <div class="tn-panel__error" data-tech-news="panel-error" role="alert" hidden>
+                    <p class="tn-panel__error-text">Failed to load some feeds. Check your connection and retry.</p>
+                    <button type="button" class="tn-btn tn-btn--ghost" data-tech-news="panel-retry">Retry</button>
+                </div>
+
+                <div class="tn-grid" data-tech-news="article-grid" hidden></div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- ================================================================
+         FOOTER
+         ================================================================ -->
+    <footer class="tn-footer">
+        <div class="tn-footer__inner">
+            <p class="tn-footer__line">
+                Tech News v2.0 · Auto-refresh every <span data-tech-news="refresh-interval">5 min</span>
+            </p>
+            <p class="tn-footer__attr">
+                Aggregated from 24 outlets across 4 categories — including
+                MIT Technology Review, VentureBeat, The Verge, Ars Technica,
+                TechCrunch, Wired, The Hacker News, Krebs on Security,
+                BleepingComputer, Dark Reading, SecurityWeek, Threatpost,
+                Windows Central, Neowin, Azure Blog, ZDNet, MS Power User,
+                The Verge Microsoft, InfoWorld, The Register, TechRepublic,
+                ComputerWorld, and Ars Technica.
+                All headlines and content remain the property of their
+                respective publishers.
+            </p>
+            <p class="tn-footer__copy">© 2026 Jonathan Castro. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- No-JS fallback -->
+    <noscript>
+        <div class="tn-noscript">
+            <p>This page requires JavaScript to load and display tech news from RSS feeds. Please enable JavaScript in your browser to continue.</p>
+        </div>
+    </noscript>
+
+    <!-- Scripts: navigation first (populates #nav-placeholder), then page logic -->
+    <script src="/navigation.js"></script>
+    <script src="/tech-news/scripts.js"></script>
+</body>
+</html>

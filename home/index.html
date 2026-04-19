@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jonathan Castro &mdash; IT Director, Network Administrator, Security Engineer</title>
+    <meta name="description" content="Live homelab-powered projects from Jonathan Castro &mdash; a Security Operations Center, server dashboard, markets tracker, and tech news aggregator. All running on a self-managed Debian 13 server.">
+    <meta name="author" content="Jonathan Castro">
+    <meta name="theme-color" content="#0a0a0a">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/assets/KarmakazifaviconICO.ico">
+
+    <!-- Google Fonts: Rajdhani (display), Inter (body), JetBrains Mono (accent) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- Global nav + design tokens -->
+    <link rel="stylesheet" href="/navigation.css">
+    <!-- Page-specific styles -->
+    <link rel="stylesheet" href="/home/styles.css">
+</head>
+<body class="no-nav-padding home-page">
+
+    <!-- Navigation is injected here by /navigation.js -->
+    <div id="nav-placeholder"></div>
+
+    <!-- ================================================
+         HERO &mdash; Full-viewport video + name + tagline
+         ================================================ -->
+    <section class="hero" aria-labelledby="hero-name">
+        <div class="hero-video-wrap">
+            <video class="hero-video"
+                   autoplay muted loop playsinline preload="auto"
+                   aria-hidden="true">
+                <source src="/assets/EmbersFalling.mp4" type="video/mp4">
+            </video>
+            <div class="hero-overlay" aria-hidden="true"></div>
+        </div>
+
+        <div class="hero-content">
+            <p class="hero-eyebrow">Portfolio</p>
+            <h1 class="hero-name" id="hero-name">Jonathan Castro</h1>
+            <p class="hero-tagline">Building, breaking, and securing systems since 2017.</p>
+        </div>
+
+        <div class="scroll-indicator" aria-hidden="true">
+            <span class="scroll-text">Scroll</span>
+            <div class="scroll-arrow"></div>
+        </div>
+    </section>
+
+    <!-- ================================================
+         ABOUT &mdash; Who Jonathan is + the homelab angle
+         ================================================ -->
+    <section class="about" aria-labelledby="about-heading">
+        <div class="container">
+            <h2 id="about-heading" class="section-title">About</h2>
+            <div class="about-body">
+                <p>
+                    I'm an IT Director, network administrator, and security engineer. I run infrastructure by day and a homelab by night &mdash; where I build the kind of tools that usually live behind enterprise licenses.
+                </p>
+                <p>
+                    Everything you see here is live and running on a Debian 13 server in my basement. Nginx out front, Node.js APIs, MariaDB in the back, all behind a hardened UFW firewall with Fail2Ban watching the logs. No managed cloud. No SaaS front-ends. Just the full stack, end to end.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================================================
+         PROJECTS &mdash; 4 live tool pages
+         ================================================ -->
+    <section class="projects" aria-labelledby="projects-heading">
+        <div class="container">
+            <h2 id="projects-heading" class="section-title">Projects</h2>
+            <p class="section-lede">Live tools running on my homelab. Click any card to dive in.</p>
+
+            <div class="project-grid">
+
+                <a href="/security-ops/" class="project-card" data-project="security-ops">
+                    <span class="project-card-num">01</span>
+                    <h3 class="project-card-title">Security Operations Center</h3>
+                    <p class="project-card-subtitle">Interconnected security dashboard</p>
+                    <p class="project-card-description">
+                        LAN discovery, vuln scanning, network traffic analysis, SIEM logs, and threat visualization &mdash; all sharing state through a central bus.
+                    </p>
+                    <span class="project-card-cta">Explore <span class="arrow" aria-hidden="true">&rarr;</span></span>
+                </a>
+
+                <a href="/homelab/" class="project-card" data-project="homelab">
+                    <span class="project-card-num">02</span>
+                    <h3 class="project-card-title">Homelab Dashboard</h3>
+                    <p class="project-card-subtitle">Live server telemetry</p>
+                    <p class="project-card-description">
+                        CPU, memory, disk, temps, service health, and network stats from a self-managed Debian 13 server.
+                    </p>
+                    <span class="project-card-cta">Explore <span class="arrow" aria-hidden="true">&rarr;</span></span>
+                </a>
+
+                <a href="/markets/" class="project-card" data-project="markets">
+                    <span class="project-card-num">03</span>
+                    <h3 class="project-card-title">Markets</h3>
+                    <p class="project-card-subtitle">Real-time market intelligence</p>
+                    <p class="project-card-description">
+                        Live stock quotes, market indices, and a custom watchlist for tracking the instruments that actually matter to you.
+                    </p>
+                    <span class="project-card-cta">Explore <span class="arrow" aria-hidden="true">&rarr;</span></span>
+                </a>
+
+                <a href="/tech-news/" class="project-card" data-project="tech-news">
+                    <span class="project-card-num">04</span>
+                    <h3 class="project-card-title">Tech News</h3>
+                    <p class="project-card-subtitle">Curated feed</p>
+                    <p class="project-card-description">
+                        Aggregated tech news with source filtering and search. Less noise, more signal.
+                    </p>
+                    <span class="project-card-cta">Explore <span class="arrow" aria-hidden="true">&rarr;</span></span>
+                </a>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ================================================
+         FOOTER
+         ================================================ -->
+    <footer class="site-footer">
+        <div class="container">
+            <p>&copy; 2026 Jonathan Castro. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Global nav controller (builds <nav> from SITE_CONFIG) -->
+    <script src="/navigation.js"></script>
+    <!-- Page script: hero video resilience + reveal on scroll -->
+    <script src="/home/scripts.js"></script>
+</body>
+</html>

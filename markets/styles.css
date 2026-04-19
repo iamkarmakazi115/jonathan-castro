@@ -1,0 +1,1242 @@
+/* ============================================================
+   MARKETS DASHBOARD - Page Styles
+   ============================================================
+   Scoped under .markets-page. Inherits all design tokens from
+   :root in /navigation.css (ember palette, surfaces, type).
+   Declares local chart-palette + severity tokens for up/down
+   price coloring, loading states, and alert styling.
+
+   Design locks (Chat 13 Q1-Q8):
+   - Horizontal top tabs (2: Stocks + News)
+   - Tables only, desktop-only (NO mobile breakpoints)
+   - Chart.js featured chart with 4 ranges
+   - Ember accent on active tab, hover states, add/reset buttons
+
+   [hidden] overrides applied preemptively for any element that
+   uses non-default display (flex, grid, etc.) and may be toggled
+   via the HTML hidden attribute (per Chat 7 lesson in
+   KNOWN ISSUES — UA [hidden] specificity is (0,0,1,0), so page
+   CSS with the same specificity will win without the override).
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   Local palette tokens (follow the SOC / Homelab convention)
+   ------------------------------------------------------------ */
+.markets-page {
+    --chart-success:      #10b981;              /* green  - up / bullish */
+    --chart-warn:         #f59e0b;              /* amber  - warning / halted */
+    --chart-danger:       #ef4444;              /* red    - down / bearish */
+    --chart-info:         var(--text-dim);      /* neutral meta text */
+    --chart-success-soft: rgba(16, 185, 129, 0.12);
+    --chart-warn-soft:    rgba(245, 158, 11, 0.12);
+    --chart-danger-soft:  rgba(239, 68, 68, 0.12);
+
+    --sev-low:            var(--chart-info);
+    --sev-medium:         var(--chart-warn);
+    --sev-high:           #f97316;              /* deep orange between amber and red */
+    --sev-critical:       var(--chart-danger);
+
+    /* Inset surface - darker than --bg-elevated, for table zebra + input wells */
+    --mk-inset:           rgba(0, 0, 0, 0.35);
+
+    /* Standard panel surface */
+    --mk-panel:           var(--bg-elevated);
+    --mk-panel-border:    var(--border);
+}
+
+/* ------------------------------------------------------------
+   Page root
+   ------------------------------------------------------------ */
+.markets-page {
+    background-color: var(--bg-base);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.5;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Subtle grid texture - ember-tinted, behind all content */
+.markets-page::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255, 107, 53, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 107, 53, 0.02) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* ------------------------------------------------------------
+   Scrollbar (scoped - inner panels + table overflow)
+   ------------------------------------------------------------ */
+.markets-page ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.markets-page ::-webkit-scrollbar-track {
+    background: var(--bg-base);
+}
+.markets-page ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 3px;
+}
+.markets-page ::-webkit-scrollbar-thumb:hover {
+    background: var(--ember);
+}
+
+/* ------------------------------------------------------------
+   Connection error banner
+   Fixed to bottom of viewport when JS un-hides it.
+   ------------------------------------------------------------ */
+.markets-page .markets-conn-error {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    color: var(--chart-danger);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    z-index: 1001;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    animation: markets-slide-up 0.3s var(--ease);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.markets-page .markets-conn-error[hidden] {
+    display: none;
+}
+
+.markets-page .markets-conn-error-icon {
+    flex-shrink: 0;
+    display: inline-flex;
+}
+
+@keyframes markets-slide-up {
+    from { transform: translateX(-50%) translateY(20px); opacity: 0; }
+    to   { transform: translateX(-50%) translateY(0);    opacity: 1; }
+}
+
+/* ------------------------------------------------------------
+   Dashboard Header - sticky below main nav
+   ------------------------------------------------------------ */
+.markets-page .markets-header {
+    position: sticky;
+    top: var(--nav-height, 72px);
+    z-index: 90;
+    background: rgba(10, 10, 10, 0.85);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border-bottom: 1px solid var(--border);
+}
+
+.markets-page .markets-header-top {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 1rem 2rem 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+/* Title + subtitle block */
+.markets-page .markets-title-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.markets-page .markets-title {
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: var(--ember);
+    text-shadow: 0 0 20px var(--ember-glow);
+    margin: 0;
+    line-height: 1;
+}
+
+.markets-page .markets-subtitle {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-faint);
+    letter-spacing: 0.05em;
+    margin: 0;
+}
+
+/* Right-side meta cluster */
+.markets-page .markets-header-meta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.markets-page .markets-last-updated {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.15rem;
+}
+
+.markets-page .markets-last-updated-label {
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    color: var(--text-faint);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+}
+
+.markets-page .markets-last-updated-time {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--text);
+    letter-spacing: 0.04em;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Refresh button */
+.markets-page .markets-refresh-btn {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.4rem;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: border-color var(--fast), color var(--fast),
+                background var(--fast), box-shadow var(--fast);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.markets-page .markets-refresh-btn:hover {
+    border-color: var(--ember);
+    color: var(--ember);
+    background: var(--ember-soft);
+    box-shadow: 0 0 12px rgba(255, 107, 53, 0.18);
+}
+
+.markets-page .markets-refresh-btn:focus-visible {
+    outline: 2px solid var(--ember);
+    outline-offset: 2px;
+}
+
+.markets-page .markets-refresh-btn.is-spinning svg {
+    animation: markets-spin 0.8s linear;
+}
+
+@keyframes markets-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ------------------------------------------------------------
+   Tab strip (Q1: horizontal top tabs)
+   Mirrors the SOC-page tab pattern: ember underline on active,
+   tab-num color shift, aria-selected styling hook.
+   ------------------------------------------------------------ */
+.markets-page .markets-tabs {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.markets-page .markets-tab {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 0.75rem 1.25rem 0.85rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    transition: color var(--fast), border-color var(--med),
+                background var(--fast);
+}
+
+.markets-page .markets-tab:hover {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.markets-page .markets-tab:focus-visible {
+    outline: 2px solid var(--ember);
+    outline-offset: -2px;
+}
+
+.markets-page .markets-tab.is-active {
+    color: var(--ember);
+    border-bottom-color: var(--ember);
+    text-shadow: 0 0 12px var(--ember-glow);
+}
+
+.markets-page .markets-tab-num {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-faint);
+    letter-spacing: 0.1em;
+    transition: color var(--fast);
+}
+
+.markets-page .markets-tab.is-active .markets-tab-num {
+    color: var(--ember-bright);
+}
+
+.markets-page .markets-tab-label {
+    font-weight: 600;
+}
+
+/* ------------------------------------------------------------
+   Main area
+   ------------------------------------------------------------ */
+.markets-page .markets-main {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 2rem;
+    position: relative;
+    z-index: 1;
+}
+
+/* Panels: <section> is block by default. Explicit [hidden] override
+   beats the UA rule's low specificity (0,0,1,0) — without this, tabs
+   wouldn't actually hide. Covers both markets-panel-stocks and -news. */
+.markets-page .markets-panel[hidden] {
+    display: none;
+}
+
+/* ------------------------------------------------------------
+   Indices row: 4-up card grid
+   ------------------------------------------------------------ */
+.markets-page .markets-indices {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.25rem;
+    margin-bottom: 2.5rem;
+}
+
+.markets-page .markets-index-card {
+    background: var(--mk-panel);
+    border: 1px solid var(--mk-panel-border);
+    border-left: 3px solid var(--ember);
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    transition: border-color var(--med), transform var(--med),
+                box-shadow var(--med), background var(--med);
+    position: relative;
+    overflow: hidden;
+}
+
+.markets-page .markets-index-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+}
+
+.markets-page .markets-index-card.is-up {
+    border-left-color: var(--chart-success);
+}
+
+.markets-page .markets-index-card.is-down {
+    border-left-color: var(--chart-danger);
+}
+
+.markets-page .markets-index-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.markets-page .markets-index-short {
+    font-family: var(--font-display);
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: var(--ember);
+}
+
+.markets-page .markets-index-name {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.markets-page .markets-index-value {
+    font-family: var(--font-display);
+    font-size: 1.85rem;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: 0.02em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+}
+
+.markets-page .markets-index-change {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+}
+
+.markets-page .markets-index-card.is-up .markets-index-change {
+    color: var(--chart-success);
+}
+
+.markets-page .markets-index-card.is-down .markets-index-change {
+    color: var(--chart-danger);
+}
+
+/* ------------------------------------------------------------
+   Section (Watchlist container, News container)
+   ------------------------------------------------------------ */
+.markets-page .markets-section {
+    background: var(--mk-panel);
+    border: 1px solid var(--mk-panel-border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.markets-page .markets-section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    padding-bottom: 0.75rem;
+    margin-bottom: 1.25rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.markets-page .markets-section-title {
+    font-family: var(--font-display);
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin: 0;
+}
+
+.markets-page .markets-section-count {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--ember-bright);
+    letter-spacing: 0.05em;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------
+   Watchlist controls row
+   ------------------------------------------------------------ */
+.markets-page .watchlist-controls {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.25rem;
+}
+
+.markets-page .watchlist-add {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    flex: 0 0 auto;
+}
+
+.markets-page .watchlist-add-label {
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    color: var(--text-faint);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+}
+
+.markets-page .watchlist-add-input {
+    background: var(--mk-inset);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.45rem 0.75rem;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+    width: 160px;
+    text-transform: uppercase;
+    transition: border-color var(--fast), box-shadow var(--fast),
+                background var(--fast);
+}
+
+.markets-page .watchlist-add-input::placeholder {
+    color: var(--text-faint);
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.markets-page .watchlist-add-input:focus {
+    outline: none;
+    border-color: var(--ember);
+    box-shadow: 0 0 0 3px var(--ember-soft);
+    background: rgba(0, 0, 0, 0.55);
+}
+
+.markets-page .watchlist-add-input.is-shake {
+    animation: markets-shake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+    border-color: var(--chart-danger);
+}
+
+@keyframes markets-shake {
+    10%, 90% { transform: translateX(-1px); }
+    20%, 80% { transform: translateX(2px); }
+    30%, 50%, 70% { transform: translateX(-3px); }
+    40%, 60% { transform: translateX(3px); }
+}
+
+/* Watchlist status (inline flash message) */
+.markets-page .watchlist-status {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    letter-spacing: 0.02em;
+    min-height: 1.2em;
+    align-self: center;
+    margin-left: 0.25rem;
+}
+
+.markets-page .watchlist-status.is-ok {
+    color: var(--chart-success);
+}
+
+.markets-page .watchlist-status.is-error {
+    color: var(--chart-danger);
+}
+
+/* ------------------------------------------------------------
+   Buttons (generic, shared across markets page)
+   ------------------------------------------------------------ */
+.markets-page .btn {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.55rem 1.1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    transition: background var(--fast), border-color var(--fast),
+                color var(--fast), box-shadow var(--fast),
+                transform var(--fast);
+}
+
+.markets-page .btn:focus-visible {
+    outline: 2px solid var(--ember);
+    outline-offset: 2px;
+}
+
+.markets-page .btn:active {
+    transform: translateY(1px);
+}
+
+.markets-page .btn-primary {
+    background: var(--ember-soft);
+    border-color: var(--ember);
+    color: var(--ember);
+    text-shadow: 0 0 8px rgba(255, 107, 53, 0.35);
+}
+
+.markets-page .btn-primary:hover {
+    background: rgba(255, 107, 53, 0.22);
+    box-shadow: 0 0 16px rgba(255, 107, 53, 0.25);
+    color: var(--ember-bright);
+}
+
+.markets-page .btn-ghost {
+    background: transparent;
+    border-color: var(--border);
+    color: var(--text-dim);
+}
+
+.markets-page .btn-ghost:hover {
+    border-color: var(--ember);
+    color: var(--ember);
+    background: var(--ember-soft);
+}
+
+.markets-page .btn-sm {
+    font-size: 0.72rem;
+    padding: 0.45rem 0.9rem;
+    letter-spacing: 0.06em;
+}
+
+/* ------------------------------------------------------------
+   Stocks table
+   ------------------------------------------------------------ */
+.markets-page .stocks-table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--mk-inset);
+}
+
+.markets-page .stocks-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+}
+
+.markets-page .stocks-table thead {
+    background: rgba(255, 107, 53, 0.05);
+    border-bottom: 1px solid var(--border-ember);
+}
+
+.markets-page .stocks-table th {
+    text-align: left;
+    padding: 0.75rem 1rem;
+    font-family: var(--font-display);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ember);
+    white-space: nowrap;
+}
+
+.markets-page .stocks-table th.stocks-col-num {
+    text-align: right;
+}
+
+.markets-page .stocks-table th.stocks-col-remove {
+    width: 48px;
+    text-align: center;
+}
+
+.markets-page .stocks-table td {
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    vertical-align: middle;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/* Zebra + hover */
+.markets-page .stocks-table tbody tr.stocks-row {
+    cursor: pointer;
+    transition: background var(--fast);
+}
+
+.markets-page .stocks-table tbody tr.stocks-row:nth-child(even) {
+    background: rgba(255, 255, 255, 0.015);
+}
+
+.markets-page .stocks-table tbody tr.stocks-row:hover {
+    background: var(--ember-soft);
+}
+
+.markets-page .stocks-table tbody tr.stocks-row:last-child td {
+    border-bottom: none;
+}
+
+/* Cell variants */
+.markets-page .stocks-cell-sym {
+    color: var(--text);
+    letter-spacing: 0.05em;
+}
+
+.markets-page .stocks-cell-sym strong {
+    color: var(--ember);
+    font-weight: 700;
+}
+
+.markets-page .stocks-cell-name {
+    color: var(--text-dim);
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+}
+
+.markets-page .stocks-cell-name.stocks-cell-dim {
+    color: var(--text-faint);
+    font-style: italic;
+}
+
+.markets-page .stocks-cell-price,
+.markets-page .stocks-cell-change,
+.markets-page .stocks-cell-pct {
+    text-align: right;
+}
+
+.markets-page .stocks-table td:nth-child(n+3):not(.stocks-cell-remove) {
+    text-align: right;
+}
+
+.markets-page .stocks-cell-price {
+    color: var(--text);
+    font-weight: 500;
+}
+
+/* Up / down coloring - applied to change + pct cells */
+.markets-page .stocks-cell-change.is-up,
+.markets-page .stocks-cell-pct.is-up {
+    color: var(--chart-success);
+}
+
+.markets-page .stocks-cell-change.is-down,
+.markets-page .stocks-cell-pct.is-down {
+    color: var(--chart-danger);
+}
+
+.markets-page .stocks-cell-change.is-flat,
+.markets-page .stocks-cell-pct.is-flat {
+    color: var(--text-dim);
+}
+
+/* Row-level tint (very subtle) when up/down */
+.markets-page .stocks-table tbody tr.stocks-row.is-up:hover {
+    background: var(--chart-success-soft);
+}
+
+.markets-page .stocks-table tbody tr.stocks-row.is-down:hover {
+    background: var(--chart-danger-soft);
+}
+
+/* Remove button */
+.markets-page .stocks-cell-remove {
+    text-align: center;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+}
+
+.markets-page .stocks-remove-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-faint);
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-family: var(--font-body);
+    font-size: 1rem;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background var(--fast), border-color var(--fast),
+                color var(--fast), transform var(--fast);
+}
+
+.markets-page .stocks-remove-btn:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: var(--chart-danger);
+    color: var(--chart-danger);
+    transform: scale(1.1);
+}
+
+.markets-page .stocks-remove-btn:focus-visible {
+    outline: 2px solid var(--chart-danger);
+    outline-offset: 2px;
+}
+
+/* Empty state row */
+.markets-page .stocks-empty-row td {
+    border-bottom: none;
+}
+
+.markets-page .stocks-empty {
+    padding: 2rem 1rem;
+    text-align: center;
+    color: var(--text-faint);
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    font-style: italic;
+}
+
+/* Hint line below table */
+.markets-page .stocks-hint {
+    margin: 0.75rem 0 0;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--text-faint);
+    letter-spacing: 0.04em;
+    text-align: right;
+}
+
+/* Screen-reader only (used in the Remove header) */
+.markets-page .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ------------------------------------------------------------
+   Featured chart panel (hidden by default; JS toggles)
+   ------------------------------------------------------------ */
+.markets-page .featured-chart {
+    background: var(--mk-panel);
+    border: 1px solid var(--mk-panel-border);
+    border-top: 3px solid var(--ember);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-top: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    animation: markets-fade-in 0.35s var(--ease);
+}
+
+.markets-page .featured-chart[hidden] {
+    display: none;
+}
+
+@keyframes markets-fade-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Featured head: 3 columns (left symbol/name | center price/change | right ranges/close) */
+.markets-page .featured-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.markets-page .featured-head-left {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 140px;
+}
+
+.markets-page .featured-symbol {
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--ember);
+    text-shadow: 0 0 12px var(--ember-glow);
+    line-height: 1;
+}
+
+.markets-page .featured-name {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    letter-spacing: 0.02em;
+}
+
+.markets-page .featured-head-center {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.15rem;
+    flex: 1 0 auto;
+}
+
+.markets-page .featured-price {
+    font-family: var(--font-display);
+    font-size: 1.55rem;
+    font-weight: 700;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    letter-spacing: 0.02em;
+}
+
+.markets-page .featured-change {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+}
+
+.markets-page .featured-change.is-up {
+    color: var(--chart-success);
+}
+
+.markets-page .featured-change.is-down {
+    color: var(--chart-danger);
+}
+
+.markets-page .featured-change.is-flat {
+    color: var(--text-dim);
+}
+
+.markets-page .featured-head-right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+/* Range button group - segmented control */
+.markets-page .featured-ranges {
+    display: inline-flex;
+    background: var(--mk-inset);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px;
+    gap: 2px;
+}
+
+.markets-page .featured-range-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    padding: 0.4rem 0.7rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: color var(--fast), background var(--fast);
+    min-width: 32px;
+}
+
+.markets-page .featured-range-btn:hover {
+    color: var(--ember-bright);
+}
+
+.markets-page .featured-range-btn:focus-visible {
+    outline: 2px solid var(--ember);
+    outline-offset: 2px;
+}
+
+.markets-page .featured-range-btn.is-active {
+    background: var(--ember-soft);
+    color: var(--ember);
+    text-shadow: 0 0 8px rgba(255, 107, 53, 0.35);
+}
+
+/* Close button */
+.markets-page .featured-close {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-faint);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background var(--fast), border-color var(--fast),
+                color var(--fast), transform var(--fast);
+}
+
+.markets-page .featured-close:hover {
+    background: var(--ember-soft);
+    border-color: var(--ember);
+    color: var(--ember);
+    transform: rotate(90deg);
+}
+
+.markets-page .featured-close:focus-visible {
+    outline: 2px solid var(--ember);
+    outline-offset: 2px;
+}
+
+/* Featured body (chart area) */
+.markets-page .featured-body {
+    position: relative;
+    min-height: 340px;
+}
+
+.markets-page .featured-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    background: rgba(18, 18, 18, 0.7);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 2;
+    border-radius: 8px;
+}
+
+.markets-page .featured-loading[hidden] {
+    display: none;
+}
+
+.markets-page .featured-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 107, 53, 0.25);
+    border-top-color: var(--ember);
+    border-radius: 50%;
+    animation: markets-spin 0.8s linear infinite;
+    display: inline-block;
+}
+
+.markets-page .featured-chart-err {
+    padding: 2rem 1rem;
+    text-align: center;
+    color: var(--chart-danger);
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    border-radius: 8px;
+}
+
+.markets-page .featured-chart-err[hidden] {
+    display: none;
+}
+
+/* Chart.js canvas needs fixed-height parent (maintainAspectRatio: false) */
+.markets-page .featured-canvas-wrap {
+    position: relative;
+    width: 100%;
+    height: 340px;
+}
+
+.markets-page .featured-canvas-wrap canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* ------------------------------------------------------------
+   News panel
+   ------------------------------------------------------------ */
+/* [hidden] override for .markets-panel-news is handled by the
+   shared .markets-panel[hidden] rule above (covers both panels). */
+
+.markets-page .news-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+}
+
+/* News chips (JS populates All + each live source) */
+.markets-page .news-chips {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+}
+
+.markets-page .news-chip {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.35rem 0.75rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: color var(--fast), border-color var(--fast),
+                background var(--fast), text-shadow var(--fast);
+    white-space: nowrap;
+}
+
+.markets-page .news-chip:hover {
+    color: var(--ember-bright);
+    border-color: var(--border-ember);
+    background: var(--ember-soft);
+}
+
+.markets-page .news-chip:focus-visible {
+    outline: 2px solid var(--ember);
+    outline-offset: 2px;
+}
+
+.markets-page .news-chip.is-active {
+    background: var(--ember-soft);
+    border-color: var(--ember);
+    color: var(--ember);
+    text-shadow: 0 0 8px rgba(255, 107, 53, 0.35);
+}
+
+/* News feed - article grid */
+.markets-page .news-feed {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 1rem;
+}
+
+.markets-page .news-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    transition: border-color var(--med), transform var(--med),
+                box-shadow var(--med);
+}
+
+.markets-page .news-card:hover {
+    border-color: var(--border-ember);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.markets-page .news-card-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.markets-page .news-source-tag {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ember);
+    background: var(--ember-soft);
+    padding: 0.2rem 0.55rem;
+    border-radius: 3px;
+    border: 1px solid rgba(255, 107, 53, 0.25);
+}
+
+.markets-page .news-time {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-faint);
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+
+.markets-page .news-card-title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--text);
+}
+
+.markets-page .news-card-title a {
+    color: inherit;
+    text-decoration: none;
+    transition: color var(--fast), text-shadow var(--fast);
+}
+
+.markets-page .news-card-title a:hover {
+    color: var(--ember-bright);
+    text-shadow: 0 0 10px var(--ember-glow);
+}
+
+.markets-page .news-card-title a:focus-visible {
+    outline: 2px solid var(--ember);
+    outline-offset: 3px;
+    border-radius: 2px;
+}
+
+.markets-page .news-card-desc {
+    margin: 0;
+    font-family: var(--font-body);
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+}
+
+/* News loading / empty states */
+.markets-page .news-loading,
+.markets-page .news-empty {
+    grid-column: 1 / -1;
+    padding: 3rem 1rem;
+    text-align: center;
+    color: var(--text-faint);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-style: italic;
+    background: var(--mk-inset);
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+}
+
+/* ------------------------------------------------------------
+   Footer
+   ------------------------------------------------------------ */
+.markets-page .markets-footer {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 1.5rem 2rem 3rem;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-faint);
+    letter-spacing: 0.08em;
+    position: relative;
+    z-index: 1;
+}
+
+.markets-page .markets-footer-sep {
+    margin: 0 0.75rem;
+    color: rgba(255, 255, 255, 0.15);
+}
+
+/* ------------------------------------------------------------
+   Reduced motion - kill all animations and transitions
+   ------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+    .markets-page *,
+    .markets-page *::before,
+    .markets-page *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+    }
+}

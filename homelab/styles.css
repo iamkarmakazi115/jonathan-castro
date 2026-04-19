@@ -1,0 +1,984 @@
+/* ============================================================
+   HOMELAB DASHBOARD - Page Styles
+   ============================================================
+   Scoped under .homelab-page. Inherits all design tokens from
+   :root in /navigation.css (ember palette, surfaces, type).
+   Adds local severity palette tokens for gauges, status dots,
+   and log entries.
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   Local palette tokens - follow the SOC page convention.
+   Declared on .homelab-page so they inherit to every descendant.
+   ------------------------------------------------------------ */
+.homelab-page {
+    --chart-success:   #10b981;              /* green  - online / running / healthy */
+    --chart-warn:      #f59e0b;              /* amber  - warning / expiring soon */
+    --chart-danger:    #ef4444;              /* red    - critical / stopped / expired */
+    --chart-success-soft: rgba(16, 185, 129, 0.15);
+    --chart-warn-soft:    rgba(245, 158, 11, 0.15);
+    --chart-danger-soft:  rgba(239, 68, 68, 0.15);
+
+    --sev-low:      var(--chart-success);
+    --sev-medium:   var(--chart-warn);
+    --sev-high:     #f97316;                 /* deep orange between amber and red */
+    --sev-critical: var(--chart-danger);
+
+    /* Gauge geometry: 2 * PI * r where r=52 -> circumference = 326.73 */
+    --gauge-circumference: 326.73;
+
+    /* Inset surface - darker than --bg-elevated, for inner rows */
+    --hl-inset:     rgba(0, 0, 0, 0.35);
+}
+
+/* ------------------------------------------------------------
+   Page root
+   ------------------------------------------------------------ */
+.homelab-page {
+    background-color: var(--bg-base);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.5;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Subtle grid texture overlay - behind all content */
+.homelab-page::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255, 107, 53, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 107, 53, 0.02) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* ------------------------------------------------------------
+   Scrollbar (webkit-scoped inside page + inner overflow areas)
+   ------------------------------------------------------------ */
+.homelab-page ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.homelab-page ::-webkit-scrollbar-track {
+    background: var(--bg-base);
+}
+.homelab-page ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 3px;
+}
+.homelab-page ::-webkit-scrollbar-thumb:hover {
+    background: var(--ember);
+}
+
+/* ------------------------------------------------------------
+   Dashboard Header - sticky below main nav
+   ------------------------------------------------------------ */
+.homelab-page .dash-header {
+    position: sticky;
+    top: var(--nav-height, 72px);
+    z-index: 90;
+    background: rgba(10, 10, 10, 0.85);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 2rem;
+}
+
+.homelab-page .dash-header-inner {
+    max-width: 1440px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.homelab-page .dash-title-block {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+/* Status dot - idle (grey) by default, online (green pulsing) / offline (red) via JS */
+.homelab-page .dash-status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--text-faint);
+    flex-shrink: 0;
+    position: relative;
+    transition: background var(--med), box-shadow var(--med);
+}
+
+.homelab-page .dash-status-dot.online {
+    background: var(--chart-success);
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.55);
+}
+
+.homelab-page .dash-status-dot.online::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 2px solid rgba(16, 185, 129, 0.35);
+    animation: homelab-pulse-ring 2s ease-out infinite;
+}
+
+.homelab-page .dash-status-dot.offline {
+    background: var(--chart-danger);
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.55);
+}
+
+@keyframes homelab-pulse-ring {
+    0%   { transform: scale(1);   opacity: 1; }
+    100% { transform: scale(1.8); opacity: 0; }
+}
+
+/* Title + subtitle */
+.homelab-page .dash-title {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: var(--ember);
+    text-shadow: 0 0 20px var(--ember-glow);
+}
+
+.homelab-page .dash-subtitle {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-faint);
+    letter-spacing: 0.05em;
+}
+
+/* Header right cluster */
+.homelab-page .dash-header-right {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.homelab-page .dash-uptime-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.4rem 1rem;
+}
+
+.homelab-page .badge-label {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    color: var(--text-faint);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+}
+
+.homelab-page .badge-value {
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    color: var(--chart-success);
+    font-weight: 600;
+}
+
+.homelab-page .dash-refresh-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-dim);
+}
+
+/* Refresh button */
+.homelab-page .refresh-btn {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.35rem;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: border-color var(--fast), color var(--fast),
+                box-shadow var(--fast), background var(--fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.homelab-page .refresh-btn:hover {
+    border-color: var(--ember);
+    color: var(--ember);
+    background: var(--ember-soft);
+    box-shadow: 0 0 12px rgba(255, 107, 53, 0.18);
+}
+
+.homelab-page .refresh-btn:focus-visible {
+    outline: 2px solid var(--ember);
+    outline-offset: 2px;
+}
+
+.homelab-page .refresh-btn.spinning svg {
+    animation: homelab-spin 0.8s linear;
+}
+
+@keyframes homelab-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ------------------------------------------------------------
+   Main dashboard area
+   ------------------------------------------------------------ */
+.homelab-page .dash-main {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 2rem;
+    position: relative;
+    z-index: 1;
+}
+
+.homelab-page .dash-section {
+    margin-bottom: 2.5rem;
+}
+
+.homelab-page .section-label {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-faint);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+    padding-left: 0.25rem;
+    font-weight: 500;
+}
+
+/* ------------------------------------------------------------
+   Panel shared styles
+   ------------------------------------------------------------ */
+.homelab-page .panel-title {
+    font-family: var(--font-display);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.homelab-page .panel-title.panel-title-stacked {
+    margin-top: 1.5rem;
+}
+
+/* ------------------------------------------------------------
+   Row 1: Vitals grid (4 gauge cards)
+   ------------------------------------------------------------ */
+.homelab-page .vitals-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.25rem;
+}
+
+.homelab-page .vital-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    text-align: center;
+    transition: border-color var(--med), transform var(--med),
+                box-shadow var(--med), background var(--med);
+    position: relative;
+    overflow: hidden;
+}
+
+.homelab-page .vital-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--ember), transparent);
+    opacity: 0;
+    transition: opacity var(--med);
+}
+
+.homelab-page .vital-card:hover {
+    border-color: var(--border-ember);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+}
+
+.homelab-page .vital-card:hover::before {
+    opacity: 1;
+}
+
+.homelab-page .vital-card.warning {
+    border-color: rgba(245, 158, 11, 0.35);
+}
+.homelab-page .vital-card.warning::before {
+    background: linear-gradient(90deg, transparent, var(--chart-warn), transparent);
+    opacity: 1;
+}
+
+.homelab-page .vital-card.critical {
+    border-color: rgba(239, 68, 68, 0.4);
+}
+.homelab-page .vital-card.critical::before {
+    background: linear-gradient(90deg, transparent, var(--chart-danger), transparent);
+    opacity: 1;
+}
+
+.homelab-page .vital-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.homelab-page .vital-icon {
+    color: var(--text-faint);
+    display: inline-flex;
+}
+
+.homelab-page .vital-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    color: var(--text-faint);
+    text-transform: uppercase;
+}
+
+/* ------------------------------------------------------------
+   Gauge rings (circular SVG progress)
+   ------------------------------------------------------------ */
+.homelab-page .vital-gauge-wrap {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    margin: 0 auto;
+}
+
+.homelab-page .vital-gauge {
+    transform: rotate(-90deg);
+    width: 100%;
+    height: 100%;
+}
+
+.homelab-page .gauge-bg {
+    fill: none;
+    stroke: var(--bg-deep);
+    stroke-width: 8;
+}
+
+.homelab-page .gauge-fill {
+    fill: none;
+    stroke: var(--ember);
+    stroke-width: 8;
+    stroke-linecap: round;
+    stroke-dasharray: var(--gauge-circumference);
+    stroke-dashoffset: var(--gauge-circumference);
+    transition: stroke-dashoffset 1s cubic-bezier(0.22, 1, 0.36, 1),
+                stroke 0.5s ease;
+    filter: drop-shadow(0 0 6px rgba(255, 107, 53, 0.35));
+}
+
+.homelab-page .gauge-fill.warning {
+    stroke: var(--chart-warn);
+    filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.4));
+}
+
+.homelab-page .gauge-fill.critical {
+    stroke: var(--chart-danger);
+    filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.4));
+}
+
+.homelab-page .vital-gauge-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+}
+
+.homelab-page .gauge-value {
+    font-family: var(--font-display);
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.homelab-page .gauge-unit {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-faint);
+    margin-top: 0.5rem;
+}
+
+.homelab-page .vital-detail {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    margin-top: 0.75rem;
+}
+
+/* ------------------------------------------------------------
+   Row 2: Services / SSL / Security grid
+   ------------------------------------------------------------ */
+.homelab-page .services-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1.25rem;
+}
+
+.homelab-page .service-panel,
+.homelab-page .ssl-panel,
+.homelab-page .security-panel {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+}
+
+/* Service list rows */
+.homelab-page .service-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.homelab-page .service-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    background: var(--hl-inset);
+    transition: background var(--fast);
+}
+
+.homelab-page .service-row:hover {
+    background: var(--ember-soft);
+}
+
+.homelab-page .svc-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-faint);
+    flex-shrink: 0;
+}
+
+.homelab-page .svc-dot.running {
+    background: var(--chart-success);
+    box-shadow: 0 0 6px rgba(16, 185, 129, 0.45);
+}
+
+.homelab-page .svc-dot.stopped {
+    background: var(--chart-danger);
+    box-shadow: 0 0 6px rgba(239, 68, 68, 0.45);
+}
+
+.homelab-page .svc-name {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--text);
+    flex: 1;
+}
+
+.homelab-page .svc-status {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.homelab-page .svc-status.running { color: var(--chart-success); }
+.homelab-page .svc-status.stopped { color: var(--chart-danger); }
+
+/* ------------------------------------------------------------
+   SSL Certificate panel
+   ------------------------------------------------------------ */
+.homelab-page .ssl-info {
+    display: flex;
+    gap: 1.25rem;
+    align-items: flex-start;
+}
+
+.homelab-page .ssl-lock {
+    color: var(--text-faint);
+    flex-shrink: 0;
+    transition: color var(--med), filter var(--med);
+    display: inline-flex;
+}
+
+.homelab-page .ssl-lock.valid {
+    color: var(--chart-success);
+    filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.35));
+}
+
+.homelab-page .ssl-lock.expiring {
+    color: var(--chart-warn);
+    filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.3));
+}
+
+.homelab-page .ssl-lock.expired {
+    color: var(--chart-danger);
+    filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.35));
+}
+
+.homelab-page .ssl-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.homelab-page .ssl-domain {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--ember);
+    margin-bottom: 0.25rem;
+    word-break: break-all;
+    text-shadow: 0 0 10px rgba(255, 107, 53, 0.2);
+}
+
+.homelab-page .ssl-issuer {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--text-faint);
+    margin-bottom: 0.75rem;
+}
+
+.homelab-page .ssl-expiry-wrap {
+    display: flex;
+    gap: 0.5rem;
+    align-items: baseline;
+    margin-bottom: 0.5rem;
+}
+
+.homelab-page .ssl-expiry-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.homelab-page .ssl-expiry-date {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--text);
+}
+
+.homelab-page .ssl-days-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.homelab-page .ssl-days-bar {
+    flex: 1;
+    height: 4px;
+    background: var(--bg-deep);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.homelab-page .ssl-days-fill {
+    height: 100%;
+    background: var(--chart-success);
+    border-radius: 2px;
+    transition: width 1s ease, background 0.5s ease;
+    width: 0%;
+}
+
+.homelab-page .ssl-days-fill.expiring { background: var(--chart-warn); }
+.homelab-page .ssl-days-fill.expired  { background: var(--chart-danger); }
+
+.homelab-page .ssl-days-text {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--text-dim);
+    white-space: nowrap;
+}
+
+/* ------------------------------------------------------------
+   Security panel (UFW / Fail2Ban / Banned / Ports / Attacks)
+   ------------------------------------------------------------ */
+.homelab-page .security-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem;
+}
+
+.homelab-page .sec-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    background: var(--hl-inset);
+    transition: background var(--fast);
+}
+
+.homelab-page .sec-item:hover {
+    background: var(--ember-soft);
+}
+
+.homelab-page .sec-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--text-faint);
+}
+
+.homelab-page .sec-value {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text);
+    font-weight: 500;
+}
+
+.homelab-page .sec-value.active   { color: var(--chart-success); }
+.homelab-page .sec-value.inactive { color: var(--chart-danger); }
+
+/* Banned IP count pops in ember-bright (Q5 style hook from JS) */
+.homelab-page .sec-number {
+    color: var(--ember-bright);
+    font-weight: 700;
+    text-shadow: 0 0 8px rgba(255, 133, 81, 0.3);
+}
+
+/* ------------------------------------------------------------
+   Row 3: Info grid (System / Network+DB / Recent Activity)
+   ------------------------------------------------------------ */
+.homelab-page .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.5fr;
+    gap: 1.25rem;
+}
+
+.homelab-page .info-panel {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+}
+
+.homelab-page .info-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.homelab-page .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.homelab-page .info-row:last-child {
+    border-bottom: none;
+}
+
+.homelab-page .info-key {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.homelab-page .info-val {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--text);
+    text-align: right;
+    max-width: 60%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ------------------------------------------------------------
+   Recent Activity / Log panel
+   Q6: adds .log-panel-head wrapper for filter chips
+   ------------------------------------------------------------ */
+.homelab-page .log-panel {
+    max-height: 480px;
+    display: flex;
+    flex-direction: column;
+}
+
+.homelab-page .log-panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+/* When the head wrapper is present, collapse the bottom border/margin
+   from the nested .panel-title so the chips line up cleanly. */
+.homelab-page .log-panel .log-panel-head .panel-title {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+    flex-shrink: 0;
+}
+
+.homelab-page .log-feed {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding-right: 0.25rem;
+}
+
+.homelab-page .log-entry {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    padding: 0.4rem 0.6rem;
+    border-radius: 4px;
+    background: var(--hl-inset);
+    border-left: 2px solid var(--border);
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+/* Severity border-left colors */
+.homelab-page .log-entry.info    { border-left-color: var(--ember); }
+.homelab-page .log-entry.success { border-left-color: var(--chart-success); }
+.homelab-page .log-entry.warning { border-left-color: var(--chart-warn); }
+.homelab-page .log-entry.error   { border-left-color: var(--chart-danger); }
+
+.homelab-page .log-time {
+    color: var(--text-faint);
+    margin-right: 0.5rem;
+}
+
+/* Empty state - shown when a filter returns zero entries */
+.homelab-page .log-entry.log-empty {
+    color: var(--text-faint);
+    font-style: italic;
+    border-left-color: transparent;
+    background: transparent;
+    text-align: center;
+    padding: 1rem;
+}
+
+/* ------------------------------------------------------------
+   Q6: Log severity filter chips
+   ------------------------------------------------------------ */
+.homelab-page .log-filter-chips {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+}
+
+.homelab-page .log-filter-chip {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: color var(--fast), border-color var(--fast),
+                background var(--fast), text-shadow var(--fast);
+    white-space: nowrap;
+}
+
+.homelab-page .log-filter-chip:hover {
+    color: var(--ember-bright);
+    border-color: var(--border-ember);
+    background: var(--ember-soft);
+}
+
+.homelab-page .log-filter-chip:focus-visible {
+    outline: 2px solid var(--ember);
+    outline-offset: 2px;
+}
+
+.homelab-page .log-filter-chip.is-active {
+    background: var(--ember-soft);
+    border-color: var(--ember);
+    color: var(--ember);
+    text-shadow: 0 0 8px rgba(255, 107, 53, 0.35);
+}
+
+/* ------------------------------------------------------------
+   Skeleton loading shimmer (for service rows + log entries)
+   ------------------------------------------------------------ */
+.homelab-page .skeleton {
+    position: relative;
+    overflow: hidden;
+}
+
+.homelab-page .skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg,
+        transparent,
+        rgba(255, 107, 53, 0.06),
+        transparent);
+    animation: homelab-shimmer 1.5s infinite;
+}
+
+@keyframes homelab-shimmer {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* ------------------------------------------------------------
+   Footer
+   ------------------------------------------------------------ */
+.homelab-page .dash-footer {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 1.5rem 2rem 3rem;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-faint);
+    letter-spacing: 0.05em;
+    position: relative;
+    z-index: 1;
+}
+
+.homelab-page .footer-sep {
+    margin: 0 0.75rem;
+    color: rgba(255, 255, 255, 0.15);
+}
+
+/* ------------------------------------------------------------
+   Connection error banner (fixed to bottom when JS shows it)
+   ------------------------------------------------------------ */
+.homelab-page .connection-error {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    color: var(--chart-danger);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    z-index: 1000;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: none;
+    animation: homelab-slide-up 0.3s ease;
+}
+
+.homelab-page .connection-error.show {
+    display: block;
+}
+
+@keyframes homelab-slide-up {
+    from { transform: translateX(-50%) translateY(20px); opacity: 0; }
+    to   { transform: translateX(-50%) translateY(0);    opacity: 1; }
+}
+
+/* ------------------------------------------------------------
+   Responsive breakpoints
+   ------------------------------------------------------------ */
+@media (max-width: 1200px) {
+    .homelab-page .vitals-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .homelab-page .services-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    .homelab-page .security-panel {
+        grid-column: span 2;
+    }
+    .homelab-page .info-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    .homelab-page .log-panel {
+        grid-column: span 2;
+    }
+}
+
+@media (max-width: 768px) {
+    .homelab-page .dash-header {
+        padding: 0.75rem 1rem;
+        top: 56px;
+    }
+    .homelab-page .dash-header-inner {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .homelab-page .dash-main {
+        padding: 1rem;
+    }
+    .homelab-page .vitals-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    .homelab-page .services-grid {
+        grid-template-columns: 1fr;
+    }
+    .homelab-page .security-panel {
+        grid-column: span 1;
+    }
+    .homelab-page .info-grid {
+        grid-template-columns: 1fr;
+    }
+    .homelab-page .log-panel {
+        grid-column: span 1;
+    }
+    .homelab-page .dash-title {
+        font-size: 1rem;
+    }
+    /* Q6: stack the panel head on narrow screens */
+    .homelab-page .log-panel-head {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+@media (max-width: 480px) {
+    .homelab-page .vitals-grid {
+        grid-template-columns: 1fr;
+    }
+    .homelab-page .security-grid {
+        grid-template-columns: 1fr;
+    }
+    .homelab-page .dash-header-right {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+}
+
+/* ------------------------------------------------------------
+   Reduced motion - kill all animations and transitions
+   ------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+    .homelab-page *,
+    .homelab-page *::before,
+    .homelab-page *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+    }
+}

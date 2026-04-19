@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Operations Center &mdash; Jonathan Castro</title>
+    <meta name="description" content="Unified security dashboard combining LAN discovery, vulnerability scanning, network traffic monitoring, SIEM log analysis, and threat visualization. All tools share state through a central bus.">
+    <meta name="theme-color" content="#0a0a0a">
+
+    <link rel="icon" type="image/x-icon" href="/assets/KarmakazifaviconICO.ico">
+
+    <!-- Fonts: Rajdhani (display) + Inter (body) + JetBrains Mono (accent) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- Chart.js (NetMon traffic chart + ThreatViz event/timeline charts) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+    <!-- Leaflet (ThreatViz geo map only) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+    <!-- Global nav + design tokens -->
+    <link rel="stylesheet" href="/navigation.css">
+    <!-- Page-specific styles -->
+    <link rel="stylesheet" href="/security-ops/styles.css">
+</head>
+<body class="socops-page">
+
+    <!-- Navigation is injected here by /navigation.js -->
+    <div id="nav-placeholder"></div>
+
+    <!-- ============================================================
+         SHARED AUTH MODAL (one gate for the whole SOC page)
+         ============================================================ -->
+    <div class="auth-modal" id="authModal" hidden aria-hidden="true">
+        <div class="auth-modal-backdrop"></div>
+        <div class="auth-card" role="dialog" aria-labelledby="authTitle" aria-modal="true">
+            <button type="button" class="auth-close" id="authClose" aria-label="Close">&times;</button>
+            <div class="auth-icon" aria-hidden="true">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+            </div>
+            <h2 id="authTitle" class="auth-title">SOC Access</h2>
+            <p class="auth-subtitle">Authenticate to activate tools that require elevated access.</p>
+            <form id="authForm" class="auth-form" autocomplete="on">
+                <label class="auth-field">
+                    <span class="auth-field-label">Email</span>
+                    <input type="email" id="authEmail" required autocomplete="email" placeholder="operator@domain.com">
+                </label>
+                <label class="auth-field">
+                    <span class="auth-field-label">Password</span>
+                    <input type="password" id="authPassword" required autocomplete="current-password" placeholder="••••••••">
+                </label>
+                <div class="auth-error" id="authError" role="alert" hidden></div>
+                <button type="submit" class="btn btn-primary btn-full" id="authSubmit">
+                    <span class="btn-text">Authenticate</span>
+                </button>
+            </form>
+            <p class="auth-note">Read-only tools (NetMon, Vuln Scanner, ThreatViz) work without a login.</p>
+        </div>
+    </div>
+
+    <main class="socops-main">
+
+        <!-- ============================================================
+             STICKY SECURITY POSTURE CARD (top of page, always visible)
+             Pulls from SOCState.posture. Subscribes to posture:changed.
+             ============================================================ -->
+        <section class="posture-card" id="postureCard" aria-label="Security posture summary">
+            <div class="posture-header">
+                <h1 class="posture-title">Security Operations Center</h1>
+                <div class="posture-auth" id="postureAuth">
+                    <span class="posture-auth-dot" id="authDot" data-state="out"></span>
+                    <span class="posture-auth-text" id="authStatus">Not authenticated</span>
+                    <button type="button" class="btn btn-ghost btn-sm" id="authToggleBtn">Log in</button>
+                </div>
+            </div>
+            <div class="posture-body">
+                <div class="posture-score" data-grade="a">
+                    <span class="posture-score-value" id="postureScore">--</span>
+                    <span class="posture-score-max">/100</span>
+                    <span class="posture-score-label">Posture</span>
+                </div>
+                <div class="posture-metrics">
+                    <div class="posture-metric"><span class="posture-metric-label">Hosts</span><span class="posture-metric-value" id="metricHosts">0</span></div>
+                    <div class="posture-metric"><span class="posture-metric-label">Vulns</span><span class="posture-metric-value" id="metricVulns">0</span></div>
+                    <div class="posture-metric"><span class="posture-metric-label">Net Alerts</span><span class="posture-metric-value" id="metricAlerts">0</span></div>
+                    <div class="posture-metric"><span class="posture-metric-label">SIEM Events</span><span class="posture-metric-value" id="metricEvents">0</span></div>
+                    <div class="posture-metric posture-metric-accent"><span class="posture-metric-label">Correlations</span><span class="posture-metric-value" id="metricCorrelations">0</span></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================
+             TAB STRIP — 5 SOC tools
+             WAI-ARIA tabs pattern with keyboard nav (Arrow/Home/End)
+             ============================================================ -->
+        <div class="tab-strip" role="tablist" aria-label="SOC tools">
+            <button type="button" role="tab" id="tab-lan"  aria-controls="panel-lan"  aria-selected="true"  tabindex="0"  class="tab" data-tool="lanDiscovery">
+                <span class="tab-num">01</span><span class="tab-label">LAN Discovery</span>
+            </button>
+            <button type="button" role="tab" id="tab-vuln" aria-controls="panel-vuln" aria-selected="false" tabindex="-1" class="tab" data-tool="vulnScan">
+                <span class="tab-num">02</span><span class="tab-label">Vuln Scan</span>
+            </button>
+            <button type="button" role="tab" id="tab-net"  aria-controls="panel-net"  aria-selected="false" tabindex="-1" class="tab" data-tool="netTraffic">
+                <span class="tab-num">03</span><span class="tab-label">Network Traffic</span>
+            </button>
+            <button type="button" role="tab" id="tab-siem" aria-controls="panel-siem" aria-selected="false" tabindex="-1" class="tab" data-tool="siemLogs">
+                <span class="tab-num">04</span><span class="tab-label">SIEM Logs</span>
+            </button>
+            <button type="button" role="tab" id="tab-viz"  aria-controls="panel-viz"  aria-selected="false" tabindex="-1" class="tab" data-tool="threatViz">
+                <span class="tab-num">05</span><span class="tab-label">ThreatViz</span>
+            </button>
+        </div>
+
+        <!-- ============================================================
+             TOOL PANELS — 5 panels, one visible at a time
+             Each panel will be populated by its module in /tools/<tool>.js
+             For now: placeholder empty-states.
+             ============================================================ -->
+        <section role="tabpanel" id="panel-lan" aria-labelledby="tab-lan" class="panel panel-active panel-lan">
+
+            <!-- Auth gate overlay (shown when SOCState.isAuthenticated() is false) -->
+            <div class="lan-auth-overlay" hidden>
+                <div class="lan-auth-overlay-card">
+                    <h3>Authentication required</h3>
+                    <p>LAN Discovery uses the live scan API and requires a SOC login. Use the <strong>Log in</strong> button in the posture card at the top of this page.</p>
+                </div>
+            </div>
+
+            <!-- Scan controls -->
+            <div class="lan-controls">
+                <div class="lan-control-row">
+                    <label class="lan-field">
+                        <span class="lan-field-label">Target range</span>
+                        <input type="text" class="lan-target" data-lan="target" placeholder="192.168.0.0/24" autocomplete="off" spellcheck="false">
+                    </label>
+                    <div class="lan-scan-type" role="radiogroup" aria-label="Scan type">
+                        <label class="lan-radio"><input type="radio" name="lan-scanType" value="discovery" checked><span>Discovery</span></label>
+                        <label class="lan-radio"><input type="radio" name="lan-scanType" value="quick"><span>Quick</span></label>
+                        <label class="lan-radio"><input type="radio" name="lan-scanType" value="full"><span>Full</span></label>
+                        <label class="lan-radio"><input type="radio" name="lan-scanType" value="aggressive"><span>Aggressive</span></label>
+                    </div>
+                </div>
+                <div class="lan-control-row lan-control-buttons">
+                    <button type="button" class="btn btn-primary" data-lan-action="scan">Start Scan</button>
+                    <button type="button" class="btn btn-ghost" data-lan-action="stop" style="display:none;">Stop Scan</button>
+                    <button type="button" class="btn btn-ghost" data-lan-action="clear">Clear Results</button>
+                    <button type="button" class="btn btn-ghost" data-lan-action="export">Export CSV</button>
+                </div>
+            </div>
+
+            <!-- Live stat counters -->
+            <div class="lan-stats">
+                <div class="lan-stat"><span class="lan-stat-label">Hosts</span><span class="lan-stat-value" data-lan="hosts-found">0</span></div>
+                <div class="lan-stat"><span class="lan-stat-label">Ports</span><span class="lan-stat-value" data-lan="ports-found">0</span></div>
+                <div class="lan-stat"><span class="lan-stat-label">Vulns</span><span class="lan-stat-value" data-lan="vulns-found">0</span></div>
+                <div class="lan-stat"><span class="lan-stat-label">Elapsed</span><span class="lan-stat-value" data-lan="elapsed">0s</span></div>
+            </div>
+
+            <!-- Progress panel (hidden until scan starts) -->
+            <div class="lan-panel" data-lan="progress-panel" hidden>
+                <div class="lan-panel-head">
+                    <span class="lan-panel-title">Scan Progress</span>
+                    <span class="lan-progress-percent" data-lan="progress-percent">0%</span>
+                </div>
+                <div class="lan-progress-bar">
+                    <div class="lan-progress-fill" data-lan="progress-fill" style="width:0%;"></div>
+                </div>
+                <div class="lan-progress-label" data-lan="progress-label">Initializing...</div>
+            </div>
+
+            <!-- Live log -->
+            <div class="lan-panel lan-log">
+                <div class="lan-panel-head">
+                    <span class="lan-panel-title">Live Log</span>
+                    <button type="button" class="lan-log-toggle" data-lan="log-toggle" data-lan-action="log-toggle" aria-label="Toggle log">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                </div>
+                <div class="lan-log-body" data-lan="log-body"></div>
+            </div>
+
+            <!-- Summary panel -->
+            <div class="lan-panel" data-lan="summary-panel" hidden>
+                <div class="lan-panel-head"><span class="lan-panel-title">Scan Summary</span></div>
+                <div class="lan-summary">
+                    <div class="lan-summary-card"><span class="lan-summary-label">Hosts Up</span><span class="lan-summary-value" data-lan="sum-hosts">0</span></div>
+                    <div class="lan-summary-card"><span class="lan-summary-label">Ports Open</span><span class="lan-summary-value" data-lan="sum-ports">0</span></div>
+                    <div class="lan-summary-card"><span class="lan-summary-label">Vulnerabilities</span><span class="lan-summary-value" data-lan="sum-vulns">0</span></div>
+                    <div class="lan-summary-card"><span class="lan-summary-label">Duration</span><span class="lan-summary-value" data-lan="sum-time">0s</span></div>
+                </div>
+            </div>
+
+            <!-- Network map -->
+            <div class="lan-panel" data-lan="map-panel" hidden>
+                <div class="lan-panel-head"><span class="lan-panel-title">Network Map</span></div>
+                <div class="lan-map" data-lan="map"></div>
+            </div>
+
+            <!-- Hosts table -->
+            <div class="lan-panel" data-lan="hosts-panel" hidden>
+                <div class="lan-panel-head"><span class="lan-panel-title">Discovered Hosts</span></div>
+                <div class="lan-table-wrap">
+                    <table class="lan-table">
+                        <thead>
+                            <tr><th>Status</th><th>IP</th><th>Hostname</th><th>OS</th><th>Open Ports</th><th>Vulns</th><th></th></tr>
+                        </thead>
+                        <tbody data-lan="hosts-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Vulnerabilities with severity filter -->
+            <div class="lan-panel" data-lan="vulns-panel" hidden>
+                <div class="lan-panel-head">
+                    <span class="lan-panel-title">Vulnerabilities</span>
+                    <div class="lan-filter-group">
+                        <button type="button" class="lan-filter active" data-lan-filter="all">All</button>
+                        <button type="button" class="lan-filter" data-lan-filter="critical">Critical</button>
+                        <button type="button" class="lan-filter" data-lan-filter="high">High</button>
+                        <button type="button" class="lan-filter" data-lan-filter="medium">Medium</button>
+                        <button type="button" class="lan-filter" data-lan-filter="low">Low</button>
+                        <button type="button" class="lan-filter" data-lan-filter="info">Info</button>
+                    </div>
+                </div>
+                <div class="lan-vulns-list" data-lan="vulns-list"></div>
+            </div>
+
+            <!-- Port analysis (service-grouped) -->
+            <div class="lan-panel" data-lan="ports-panel" hidden>
+                <div class="lan-panel-head"><span class="lan-panel-title">Port Analysis</span></div>
+                <div class="lan-ports-list" data-lan="ports-list"></div>
+            </div>
+
+            <!-- Skipped hosts -->
+            <div class="lan-panel" data-lan="skipped-panel" hidden>
+                <div class="lan-panel-head"><span class="lan-panel-title">Skipped Hosts</span></div>
+                <div class="lan-skipped-list" data-lan="skipped-list"></div>
+            </div>
+
+        </section>
+
+        <section role="tabpanel" id="panel-vuln" aria-labelledby="tab-vuln" class="panel panel-vuln" hidden>
+
+            <!-- Target picker: discovered-hosts dropdown OR manual input -->
+            <div class="vuln-controls">
+                <div class="vuln-control-row vuln-target-row">
+                    <label class="vuln-field">
+                        <span class="vuln-field-label">Discovered hosts</span>
+                        <select class="vuln-target-select" data-vuln="target-select" aria-label="Discovered hosts">
+                            <option value="" disabled selected>No hosts discovered yet &mdash; run LAN scan or type manually</option>
+                        </select>
+                    </label>
+                    <label class="vuln-field vuln-field-grow">
+                        <span class="vuln-field-label">Target (IP, hostname, or URL)</span>
+                        <input type="text" class="vuln-target-input" data-vuln="target-input" placeholder="example.com or 192.168.0.22" autocomplete="off" spellcheck="false">
+                    </label>
+                </div>
+                <div class="vuln-dropdown-notice" data-vuln="dropdown-notice">
+                    Run a LAN scan first to populate the dropdown, or type any target above.
+                </div>
+
+                <!-- Module checkboxes (6 modules, all on by default) -->
+                <div class="vuln-modules">
+                    <div class="vuln-modules-head">
+                        <span class="vuln-modules-title">Scan Modules</span>
+                        <div class="vuln-modules-actions">
+                            <button type="button" class="btn btn-ghost btn-sm" data-vuln-action="select-all">Select All</button>
+                            <button type="button" class="btn btn-ghost btn-sm" data-vuln-action="deselect-all">Deselect All</button>
+                        </div>
+                    </div>
+                    <div class="vuln-modules-grid">
+                        <label class="vuln-module"><input type="checkbox" data-vuln-module="ports" checked><span class="vuln-module-name">Ports (Nmap)</span></label>
+                        <label class="vuln-module"><input type="checkbox" data-vuln-module="headers" checked><span class="vuln-module-name">HTTP Headers</span></label>
+                        <label class="vuln-module"><input type="checkbox" data-vuln-module="ssl" checked><span class="vuln-module-name">SSL / TLS</span></label>
+                        <label class="vuln-module"><input type="checkbox" data-vuln-module="dns" checked><span class="vuln-module-name">DNS</span></label>
+                        <label class="vuln-module"><input type="checkbox" data-vuln-module="tech" checked><span class="vuln-module-name">Technology</span></label>
+                        <label class="vuln-module"><input type="checkbox" data-vuln-module="vulns" checked><span class="vuln-module-name">Vulnerabilities</span></label>
+                    </div>
+                </div>
+
+                <!-- Action buttons -->
+                <div class="vuln-control-row vuln-control-buttons">
+                    <button type="button" class="btn btn-primary" data-vuln-action="scan">Start Scan</button>
+                    <button type="button" class="btn btn-ghost" data-vuln-action="clear">Clear Results</button>
+                    <button type="button" class="btn btn-ghost" data-vuln-action="export-json">Export JSON</button>
+                    <button type="button" class="btn btn-ghost" data-vuln-action="export-csv">Export CSV</button>
+                </div>
+            </div>
+
+            <!-- Live stat row (elapsed timer always visible during scan) -->
+            <div class="vuln-stats">
+                <div class="vuln-stat"><span class="vuln-stat-label">Elapsed</span><span class="vuln-stat-value" data-vuln="elapsed">00:00</span></div>
+            </div>
+
+            <!-- Progress panel (hidden until scan starts) -->
+            <div class="vuln-panel" data-vuln="progress-panel" hidden>
+                <div class="vuln-panel-head">
+                    <span class="vuln-panel-title">Scan Progress</span>
+                    <span class="vuln-progress-percent" data-vuln="progress-percent">0%</span>
+                </div>
+                <div class="vuln-progress-bar">
+                    <div class="vuln-progress-fill" data-vuln="progress-fill" style="width:0%;"></div>
+                </div>
+                <div class="vuln-progress-label" data-vuln="progress-label">Initializing...</div>
+            </div>
+
+            <!-- Live log -->
+            <div class="vuln-panel vuln-log">
+                <div class="vuln-panel-head">
+                    <span class="vuln-panel-title">Live Log</span>
+                    <button type="button" class="vuln-log-toggle" data-vuln="log-toggle" data-vuln-action="log-toggle" aria-label="Toggle log">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                </div>
+                <div class="vuln-log-body" data-vuln="log-body"></div>
+            </div>
+
+            <!-- Summary panel: severity counts + meta -->
+            <div class="vuln-panel" data-vuln="summary-panel" hidden>
+                <div class="vuln-panel-head"><span class="vuln-panel-title">Scan Summary</span></div>
+                <div class="vuln-summary">
+                    <div class="vuln-sum-card critical"><span class="vuln-sum-label">Critical</span><span class="vuln-sum-value" data-vuln="count-critical">0</span></div>
+                    <div class="vuln-sum-card high"><span class="vuln-sum-label">High</span><span class="vuln-sum-value" data-vuln="count-high">0</span></div>
+                    <div class="vuln-sum-card medium"><span class="vuln-sum-label">Medium</span><span class="vuln-sum-value" data-vuln="count-medium">0</span></div>
+                    <div class="vuln-sum-card low"><span class="vuln-sum-label">Low</span><span class="vuln-sum-value" data-vuln="count-low">0</span></div>
+                    <div class="vuln-sum-card info"><span class="vuln-sum-label">Info</span><span class="vuln-sum-value" data-vuln="count-info">0</span></div>
+                </div>
+                <div class="vuln-meta">
+                    <span class="vuln-meta-item" data-vuln="meta-target">Target: &mdash;</span>
+                    <span class="vuln-meta-item" data-vuln="meta-duration">Duration: 0s</span>
+                    <span class="vuln-meta-item" data-vuln="meta-date">Date: &mdash;</span>
+                </div>
+            </div>
+
+            <!-- Results sections: 6 collapsible accordions, one per module -->
+            <div class="vuln-panel" data-vuln="sections-panel" hidden>
+                <div class="vuln-panel-head"><span class="vuln-panel-title">Scan Results by Module</span></div>
+
+                <div class="vuln-section" data-vuln-section="headers" hidden>
+                    <button type="button" class="vuln-section-head" data-vuln-section-toggle="headers" aria-expanded="true">
+                        <span class="vuln-section-title">HTTP Headers</span>
+                        <span class="vuln-section-count" data-vuln-section-count>0</span>
+                        <span class="vuln-section-chevron"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    </button>
+                    <div class="vuln-section-body" data-vuln-section-body></div>
+                </div>
+
+                <div class="vuln-section" data-vuln-section="ssl" hidden>
+                    <button type="button" class="vuln-section-head" data-vuln-section-toggle="ssl" aria-expanded="true">
+                        <span class="vuln-section-title">SSL / TLS</span>
+                        <span class="vuln-section-count" data-vuln-section-count>0</span>
+                        <span class="vuln-section-chevron"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    </button>
+                    <div class="vuln-section-body" data-vuln-section-body></div>
+                </div>
+
+                <div class="vuln-section" data-vuln-section="dns" hidden>
+                    <button type="button" class="vuln-section-head" data-vuln-section-toggle="dns" aria-expanded="true">
+                        <span class="vuln-section-title">DNS</span>
+                        <span class="vuln-section-count" data-vuln-section-count>0</span>
+                        <span class="vuln-section-chevron"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    </button>
+                    <div class="vuln-section-body" data-vuln-section-body></div>
+                </div>
+
+                <div class="vuln-section" data-vuln-section="tech" hidden>
+                    <button type="button" class="vuln-section-head" data-vuln-section-toggle="tech" aria-expanded="true">
+                        <span class="vuln-section-title">Technology</span>
+                        <span class="vuln-section-count" data-vuln-section-count>0</span>
+                        <span class="vuln-section-chevron"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    </button>
+                    <div class="vuln-section-body" data-vuln-section-body></div>
+                </div>
+
+                <div class="vuln-section" data-vuln-section="ports" hidden>
+                    <button type="button" class="vuln-section-head" data-vuln-section-toggle="ports" aria-expanded="true">
+                        <span class="vuln-section-title">Open Ports</span>
+                        <span class="vuln-section-count" data-vuln-section-count>0</span>
+                        <span class="vuln-section-chevron"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    </button>
+                    <div class="vuln-section-body" data-vuln-section-body></div>
+                </div>
+
+                <div class="vuln-section" data-vuln-section="vulns" hidden>
+                    <button type="button" class="vuln-section-head" data-vuln-section-toggle="vulns" aria-expanded="true">
+                        <span class="vuln-section-title">Vulnerabilities</span>
+                        <span class="vuln-section-count" data-vuln-section-count>0</span>
+                        <span class="vuln-section-chevron"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    </button>
+                    <div class="vuln-section-body" data-vuln-section-body></div>
+                </div>
+            </div>
+
+        </section>
+
+        <section role="tabpanel" id="panel-net" aria-labelledby="tab-net" class="panel panel-net" hidden>
+
+            <!-- ================================================
+                 NetMon Status Strip: badge + server meta + pause toggle
+                 ================================================ -->
+            <div class="net-status-strip">
+                <div class="net-status-left">
+                    <div class="net-status-badge is-offline" data-net="status-badge">
+                        <span class="net-status-dot"></span>
+                        <span class="net-status-text" data-net="status-text">Connecting...</span>
+                    </div>
+                    <div class="net-header-meta">
+                        <span data-net="server-ip">&mdash;</span>
+                        <span class="net-meta-dot">&middot;</span>
+                        <span data-net="interface">&mdash;</span>
+                        <span class="net-meta-dot">&middot;</span>
+                        <span>Uptime: <span data-net="uptime">&mdash;</span></span>
+                    </div>
+                </div>
+                <div class="net-status-right">
+                    <button type="button" class="net-pause-btn" data-net-action="toggle-pause" aria-pressed="false" title="Pause polling">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                        <span class="net-pause-label" data-net="pause-label">Live</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ================================================
+                 Summary cards row
+                 ================================================ -->
+            <div class="net-summary-row">
+                <div class="net-stat-card">
+                    <span class="net-stat-label">Total Packets</span>
+                    <span class="net-stat-value" data-net="total-packets">0</span>
+                </div>
+                <div class="net-stat-card">
+                    <span class="net-stat-label">Bytes In</span>
+                    <span class="net-stat-value" data-net="total-bytes-in">0 B</span>
+                </div>
+                <div class="net-stat-card">
+                    <span class="net-stat-label">Bytes Out</span>
+                    <span class="net-stat-value" data-net="total-bytes-out">0 B</span>
+                </div>
+                <div class="net-stat-card">
+                    <span class="net-stat-label">Unique IPs</span>
+                    <span class="net-stat-value" data-net="unique-ips">0</span>
+                </div>
+                <div class="net-stat-card net-alert-card" data-net="alert-card">
+                    <span class="net-stat-label">Alerts</span>
+                    <span class="net-stat-value" data-net="alert-count">0</span>
+                    <span class="net-alert-breakdown" data-net="alert-breakdown"></span>
+                </div>
+            </div>
+
+            <!-- ================================================
+                 Traffic Over Time (full width)
+                 ================================================ -->
+            <div class="net-chart-row">
+                <div class="net-panel net-chart-panel">
+                    <div class="net-panel-head">
+                        <span class="net-panel-title">Traffic Over Time</span>
+                        <span class="net-panel-badge">Live</span>
+                    </div>
+                    <div class="net-chart-container">
+                        <canvas data-net="traffic-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================================================
+                 Protocol/Threat Intel  |  Alerts & Threats
+                 ================================================ -->
+            <div class="net-mid-row">
+                <div class="net-panel net-side-panel">
+                    <div class="net-panel-head"><span class="net-panel-title">Protocol Breakdown</span></div>
+                    <div class="net-protocol-bars" data-net="protocol-bars">
+                        <div class="net-empty">Waiting for data...</div>
+                    </div>
+                    <div class="net-panel-head net-panel-head-inner"><span class="net-panel-title">Threat Intel</span></div>
+                    <div class="net-threat-info" data-net="threat-info">
+                        <div class="net-empty">Loading...</div>
+                    </div>
+                </div>
+                <div class="net-panel net-alerts-panel">
+                    <div class="net-panel-head">
+                        <span class="net-panel-title">Alerts &amp; Threats</span>
+                        <div class="net-filter-group">
+                            <button type="button" class="net-filter-btn is-active" data-net-filter="all">All</button>
+                            <button type="button" class="net-filter-btn" data-net-filter="critical">Critical</button>
+                            <button type="button" class="net-filter-btn" data-net-filter="high">High</button>
+                            <button type="button" class="net-filter-btn" data-net-filter="medium">Medium</button>
+                        </div>
+                    </div>
+                    <div class="net-alerts-list" data-net="alerts-list">
+                        <div class="net-empty">No alerts yet &mdash; monitoring...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================================================
+                 Top Talkers (sortable table per Q3)
+                 ================================================ -->
+            <div class="net-panel">
+                <div class="net-panel-head">
+                    <span class="net-panel-title">Top Talkers</span>
+                    <span class="net-panel-subtitle" data-net="talker-count">0 IPs tracked</span>
+                </div>
+                <div class="net-table-wrapper">
+                    <table class="net-data-table">
+                        <thead>
+                            <tr>
+                                <th class="net-sortable" data-net-sort="ip">IP Address <span class="net-sort-arrow" data-net-sort-arrow></span></th>
+                                <th>Type</th>
+                                <th class="net-sortable is-sorted" data-net-sort="packets">Packets <span class="net-sort-arrow" data-net-sort-arrow>▼</span></th>
+                                <th class="net-sortable" data-net-sort="bytes_in">Bytes In <span class="net-sort-arrow" data-net-sort-arrow></span></th>
+                                <th class="net-sortable" data-net-sort="bytes_out">Bytes Out <span class="net-sort-arrow" data-net-sort-arrow></span></th>
+                                <th class="net-sortable" data-net-sort="connections">Connections <span class="net-sort-arrow" data-net-sort-arrow></span></th>
+                                <th>Ports</th>
+                                <th class="net-sortable" data-net-sort="status">Status <span class="net-sort-arrow" data-net-sort-arrow></span></th>
+                            </tr>
+                        </thead>
+                        <tbody data-net="talkers-body">
+                            <tr><td colspan="8" class="net-empty">Waiting for data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ================================================
+                 Live Packets feed (full width)
+                 ================================================ -->
+            <div class="net-bottom-row">
+                <div class="net-panel net-packets-panel">
+                    <div class="net-panel-head"><span class="net-panel-title">Live Packets</span></div>
+                    <div class="net-packets-header">
+                        <span>Time</span>
+                        <span>Proto</span>
+                        <span>Dir</span>
+                        <span>Source &rarr; Destination</span>
+                        <span>Size</span>
+                        <span>Service</span>
+                    </div>
+                    <div class="net-packets-feed" data-net="packets-feed">
+                        <div class="net-empty">Waiting for packets...</div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <section role="tabpanel" id="panel-siem" aria-labelledby="tab-siem" class="panel panel-siem" hidden>
+
+            <!-- Auth gate overlay (shown when SOCState.isAuthenticated() is false) -->
+            <div class="siem-auth-overlay" data-siem="auth-overlay" hidden>
+                <div class="siem-auth-overlay-card">
+                    <h3>Authentication required</h3>
+                    <p>SIEM Log Analyzer requires a SOC login. Use the <strong>Log in</strong> button in the posture card at the top of this page.</p>
+                </div>
+            </div>
+
+            <!-- Status strip -->
+            <div class="siem-status-strip">
+                <div class="siem-status-badge is-online">
+                    <span class="siem-status-dot"></span>
+                    <span class="siem-status-label">SIEM ANALYZER</span>
+                </div>
+                <div class="siem-header-meta">
+                    <span class="siem-meta-item">
+                        <span class="siem-meta-label">Clock</span>
+                        <span class="siem-meta-value" data-siem="clock">--</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Correlation banner (Q4 = A) - shown when correlation:found fires -->
+            <div class="siem-correlation-banner" data-siem="correlation-banner" hidden></div>
+
+            <!-- Summary cards: 5 stat tiles -->
+            <div class="siem-summary-row">
+                <div class="siem-stat-card sev-critical">
+                    <span class="siem-stat-label">Critical</span>
+                    <span class="siem-stat-value" data-siem="count-critical">0</span>
+                </div>
+                <div class="siem-stat-card sev-high">
+                    <span class="siem-stat-label">High</span>
+                    <span class="siem-stat-value" data-siem="count-high">0</span>
+                </div>
+                <div class="siem-stat-card sev-medium">
+                    <span class="siem-stat-label">Medium</span>
+                    <span class="siem-stat-value" data-siem="count-medium">0</span>
+                </div>
+                <div class="siem-stat-card sev-low">
+                    <span class="siem-stat-label">Low / Info</span>
+                    <span class="siem-stat-value" data-siem="count-low">0</span>
+                </div>
+                <div class="siem-stat-card sev-total">
+                    <span class="siem-stat-label">Total Events</span>
+                    <span class="siem-stat-value" data-siem="count-total">0</span>
+                </div>
+            </div>
+
+            <!-- Upload zone -->
+            <div class="siem-upload-zone" data-siem="upload-zone">
+                <div class="siem-upload-content" data-siem="upload-content">
+                    <svg class="siem-upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    <h3 class="siem-upload-title">Upload Log Files</h3>
+                    <p class="siem-upload-hint">Drag &amp; drop here, or click to choose files</p>
+                    <p class="siem-upload-formats">Supports: .log .txt .csv .json .evtx .xml .syslog</p>
+                    <input type="file" class="siem-file-input" data-siem="file-input" multiple accept=".log,.txt,.csv,.json,.evtx,.xml,.syslog">
+                </div>
+                <div class="siem-upload-progress" data-siem="upload-progress" hidden>
+                    <div class="siem-upload-bar"><div class="siem-upload-fill" data-siem="upload-fill"></div></div>
+                    <span class="siem-upload-text" data-siem="upload-text">Uploading...</span>
+                </div>
+            </div>
+
+            <!-- Live status line below upload zone -->
+            <div class="siem-status-line" data-siem="upload-status" data-level="info"></div>
+
+            <!-- Filter row + action buttons -->
+            <div class="siem-controls-row">
+                <div class="siem-filter-group">
+                    <label class="siem-filter-label">Severity</label>
+                    <select class="siem-filter-select" data-siem-filter="severity">
+                        <option value="all">All Severities</option>
+                        <option value="critical">Critical</option>
+                        <option value="high">High</option>
+                        <option value="medium">Medium</option>
+                        <option value="low">Low</option>
+                    </select>
+                </div>
+                <div class="siem-filter-group">
+                    <label class="siem-filter-label">Event Type</label>
+                    <select class="siem-filter-select" data-siem-filter="type">
+                        <option value="all">All Types</option>
+                        <option value="failed_login">Failed Login</option>
+                        <option value="privilege_escalation">Privilege Escalation</option>
+                        <option value="brute_force">Brute Force</option>
+                        <option value="port_scan">Port Scan</option>
+                        <option value="unusual_traffic">Unusual Traffic</option>
+                        <option value="malware_indicator">Malware Indicator</option>
+                        <option value="policy_violation">Policy Violation</option>
+                        <option value="data_exfiltration">Data Exfiltration</option>
+                        <option value="account_lockout">Account Lockout</option>
+                        <option value="service_anomaly">Service Anomaly</option>
+                    </select>
+                </div>
+                <div class="siem-filter-group">
+                    <label class="siem-filter-label">Time Range</label>
+                    <select class="siem-filter-select" data-siem-filter="time">
+                        <option value="all">All Time</option>
+                        <option value="1h">Last Hour</option>
+                        <option value="6h">Last 6 Hours</option>
+                        <option value="24h">Last 24 Hours</option>
+                        <option value="7d">Last 7 Days</option>
+                        <option value="30d">Last 30 Days</option>
+                    </select>
+                </div>
+                <div class="siem-filter-group siem-filter-search-group">
+                    <label class="siem-filter-label">Search</label>
+                    <input type="text" class="siem-filter-input" data-siem-filter="search" placeholder="IP, username, event ID...">
+                </div>
+                <div class="siem-action-group">
+                    <button type="button" class="btn btn-primary" data-siem-action="analyze" disabled>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        Analyze Logs
+                    </button>
+                    <button type="button" class="btn btn-ghost" data-siem-action="load-demo">Load Demo</button>
+                    <button type="button" class="btn btn-ghost" data-siem-action="clear">Clear</button>
+                </div>
+            </div>
+
+            <!-- Row 1: Event Timeline (full width) -->
+            <div class="siem-panel siem-timeline-panel">
+                <div class="siem-panel-head">
+                    <h3 class="siem-panel-title">Event Timeline</h3>
+                    <div class="siem-panel-actions">
+                        <button type="button" class="btn btn-sm" data-siem-chart-range="1h">1H</button>
+                        <button type="button" class="btn btn-sm is-active" data-siem-chart-range="24h">24H</button>
+                        <button type="button" class="btn btn-sm" data-siem-chart-range="7d">7D</button>
+                    </div>
+                </div>
+                <div class="siem-timeline-container" data-siem="timeline">
+                    <div class="siem-empty">Upload logs or load demo data to view timeline</div>
+                </div>
+            </div>
+
+            <!-- Row 2: Top Source IPs | Detection Rules (2 col) -->
+            <div class="siem-mid-row">
+                <div class="siem-panel siem-sources-panel">
+                    <div class="siem-panel-head">
+                        <h3 class="siem-panel-title">Top Source IPs</h3>
+                        <span class="siem-panel-badge" data-siem="unique-ips">0 unique</span>
+                    </div>
+                    <div class="siem-source-list" data-siem="source-list">
+                        <div class="siem-empty">No data yet</div>
+                    </div>
+                </div>
+                <div class="siem-panel siem-rules-panel">
+                    <div class="siem-panel-head">
+                        <h3 class="siem-panel-title">Detection Rules Triggered</h3>
+                    </div>
+                    <div class="siem-rules-list" data-siem="rules-list">
+                        <div class="siem-empty">No detections yet</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 3: Live Alert Feed (full width) -->
+            <div class="siem-panel siem-alerts-panel">
+                <div class="siem-panel-head">
+                    <h3 class="siem-panel-title">Live Alert Feed</h3>
+                    <div class="siem-panel-actions">
+                        <button type="button" class="btn btn-sm is-active" data-siem-action="autoscroll" aria-pressed="true">Auto-scroll</button>
+                        <button type="button" class="btn btn-sm" data-siem-action="export-alerts">Export CSV</button>
+                    </div>
+                </div>
+                <div class="siem-alert-feed" data-siem="alert-feed">
+                    <div class="siem-empty">Waiting for log analysis...</div>
+                </div>
+            </div>
+
+            <!-- Row 4: Event Breakdown (full width) -->
+            <div class="siem-panel siem-breakdown-panel">
+                <div class="siem-panel-head">
+                    <h3 class="siem-panel-title">Event Breakdown by Type</h3>
+                </div>
+                <div class="siem-breakdown-container" data-siem="breakdown">
+                    <div class="siem-empty">Upload logs to view breakdown</div>
+                </div>
+            </div>
+
+            <!-- Row 5: Log Viewer (full width) -->
+            <div class="siem-panel siem-logs-panel">
+                <div class="siem-panel-head">
+                    <h3 class="siem-panel-title">Log Viewer</h3>
+                    <div class="siem-panel-actions">
+                        <span class="siem-log-count" data-siem="log-count">0 entries</span>
+                        <button type="button" class="btn btn-sm" data-siem-action="export-logs">Export CSV</button>
+                    </div>
+                </div>
+                <div class="siem-table-wrap">
+                    <table class="siem-log-table">
+                        <thead>
+                            <tr>
+                                <th data-siem-sort="timestamp" class="siem-sortable is-sorted">Timestamp <span data-siem-sort-arrow>&#9660;</span></th>
+                                <th data-siem-sort="severity"  class="siem-sortable">Severity <span data-siem-sort-arrow></span></th>
+                                <th data-siem-sort="type"      class="siem-sortable">Type <span data-siem-sort-arrow></span></th>
+                                <th data-siem-sort="source_ip" class="siem-sortable">Source IP <span data-siem-sort-arrow></span></th>
+                                <th data-siem-sort="username"  class="siem-sortable">User <span data-siem-sort-arrow></span></th>
+                                <th data-siem-sort="message"   class="siem-sortable">Message <span data-siem-sort-arrow></span></th>
+                            </tr>
+                        </thead>
+                        <tbody data-siem="log-tbody"></tbody>
+                    </table>
+                    <div class="siem-table-empty" data-siem="table-empty" hidden>
+                        <p>No log entries to display</p>
+                    </div>
+                </div>
+                <div class="siem-pagination">
+                    <button type="button" class="btn btn-sm" data-siem-action="prev-page" disabled>&larr; Previous</button>
+                    <span class="siem-page-info" data-siem="page-info">Page 1</span>
+                    <button type="button" class="btn btn-sm" data-siem-action="next-page" disabled>Next &rarr;</button>
+                </div>
+            </div>
+
+        </section>
+
+        <section role="tabpanel" id="panel-viz" aria-labelledby="tab-viz" class="panel panel-viz" hidden>
+
+            <!-- Auth overlay (Q2A: shown when not authenticated) -->
+            <div class="viz-auth-overlay" data-viz="auth-overlay" hidden>
+                <div class="viz-auth-card">
+                    <span class="viz-auth-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                    </span>
+                    <h3 class="viz-auth-title">Authentication Required</h3>
+                    <p class="viz-auth-msg">ThreatViz needs an authenticated session. Use the <strong>Log in</strong> button at the top of the SOC page.</p>
+                </div>
+            </div>
+
+            <!-- Header strip: collector status + correlation badge + last update + refresh -->
+            <div class="viz-header">
+                <div class="viz-header-left">
+                    <span class="viz-status-badge is-offline" data-viz="health-badge">
+                        <span class="viz-pulse-dot" aria-hidden="true"></span>
+                        <span data-viz="health-text">Connecting...</span>
+                    </span>
+                    <span class="viz-corr-badge" data-viz="correlation-count" hidden></span>
+                </div>
+                <div class="viz-header-right">
+                    <span class="viz-last-update" data-viz="last-update">--</span>
+                    <button type="button" class="viz-icon-btn" data-viz-action="refresh" title="Refresh now" aria-label="Refresh now">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 4 23 10 17 10"/>
+                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sub-tab strip (Q1A: 4 nested tabs inside the panel) -->
+            <div class="viz-subtabs" role="tablist" aria-label="ThreatViz sections">
+                <button type="button" role="tab" class="viz-subtab is-active" data-viz-subtab="overview"  aria-selected="true"  tabindex="0">
+                    <span class="viz-subtab-num">A</span><span class="viz-subtab-label">Overview</span>
+                </button>
+                <button type="button" role="tab" class="viz-subtab"           data-viz-subtab="map"       aria-selected="false" tabindex="-1">
+                    <span class="viz-subtab-num">B</span><span class="viz-subtab-label">Threat Map</span>
+                </button>
+                <button type="button" role="tab" class="viz-subtab"           data-viz-subtab="honeypot"  aria-selected="false" tabindex="-1">
+                    <span class="viz-subtab-num">C</span><span class="viz-subtab-label">Honeypot</span>
+                </button>
+                <button type="button" role="tab" class="viz-subtab"           data-viz-subtab="blocklist" aria-selected="false" tabindex="-1">
+                    <span class="viz-subtab-num">D</span><span class="viz-subtab-label">Blocklist</span>
+                </button>
+            </div>
+
+            <!-- ============ SUB-PANEL: OVERVIEW ============ -->
+            <div class="viz-subpanel" data-viz-subpanel="overview">
+
+                <!-- 6 stat cards -->
+                <div class="viz-stats-grid">
+                    <div class="viz-stat-card viz-stat-events">
+                        <span class="viz-stat-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                                <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                            </svg>
+                        </span>
+                        <div class="viz-stat-info">
+                            <span class="viz-stat-value" data-viz="stat-total-events">--</span>
+                            <span class="viz-stat-label">Total Events</span>
+                        </div>
+                    </div>
+                    <div class="viz-stat-card viz-stat-attackers">
+                        <span class="viz-stat-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                <circle cx="9" cy="7" r="4"/>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                            </svg>
+                        </span>
+                        <div class="viz-stat-info">
+                            <span class="viz-stat-value" data-viz="stat-attackers">--</span>
+                            <span class="viz-stat-label">Attacker Profiles</span>
+                        </div>
+                    </div>
+                    <div class="viz-stat-card viz-stat-countries">
+                        <span class="viz-stat-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="2" y1="12" x2="22" y2="12"/>
+                                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10A15.3 15.3 0 0 1 12 2z"/>
+                            </svg>
+                        </span>
+                        <div class="viz-stat-info">
+                            <span class="viz-stat-value" data-viz="stat-countries">--</span>
+                            <span class="viz-stat-label">Countries</span>
+                        </div>
+                    </div>
+                    <div class="viz-stat-card viz-stat-blocked">
+                        <span class="viz-stat-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                            </svg>
+                        </span>
+                        <div class="viz-stat-info">
+                            <span class="viz-stat-value" data-viz="stat-blocked">--</span>
+                            <span class="viz-stat-label">Blocked IPs</span>
+                        </div>
+                    </div>
+                    <div class="viz-stat-card viz-stat-ssh">
+                        <span class="viz-stat-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                            </svg>
+                        </span>
+                        <div class="viz-stat-info">
+                            <span class="viz-stat-value" data-viz="stat-ssh">--</span>
+                            <span class="viz-stat-label">SSH Attempts</span>
+                        </div>
+                    </div>
+                    <div class="viz-stat-card viz-stat-honeypot">
+                        <span class="viz-stat-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                            </svg>
+                        </span>
+                        <div class="viz-stat-info">
+                            <span class="viz-stat-value" data-viz="stat-honeypot">--</span>
+                            <span class="viz-stat-label">Honeypot Traps</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts row: Event Type horizontal bar + Timeline line -->
+                <div class="viz-charts-row">
+                    <div class="viz-panel">
+                        <h3 class="viz-panel-title">Events by Type</h3>
+                        <div class="viz-chart-wrap">
+                            <canvas data-viz="event-type-canvas"></canvas>
+                        </div>
+                    </div>
+                    <div class="viz-panel">
+                        <h3 class="viz-panel-title">Events Over Time (24h)</h3>
+                        <div class="viz-chart-wrap">
+                            <canvas data-viz="timeline-canvas"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top attackers + Recent events -->
+                <div class="viz-two-col">
+                    <div class="viz-panel">
+                        <h3 class="viz-panel-title">Top Attackers</h3>
+                        <div class="viz-scroll-list" data-viz="top-attackers">
+                            <div class="viz-empty">Loading attackers...</div>
+                        </div>
+                    </div>
+                    <div class="viz-panel">
+                        <h3 class="viz-panel-title">Recent Events</h3>
+                        <div class="viz-scroll-list" data-viz="recent-events">
+                            <div class="viz-empty">Loading events...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Country grid -->
+                <div class="viz-panel viz-panel-full">
+                    <h3 class="viz-panel-title">Attacks by Country</h3>
+                    <div class="viz-country-list" data-viz="country-grid">
+                        <div class="viz-empty">Loading country data...</div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ============ SUB-PANEL: THREAT MAP ============ -->
+            <div class="viz-subpanel" data-viz-subpanel="map" hidden>
+                <div class="viz-map-wrap">
+                    <div class="viz-map" data-viz="map-container"></div>
+                    <div class="viz-map-overlay-stats">
+                        <div class="viz-map-stat">
+                            <span class="viz-map-stat-val" data-viz="map-live-sources">0</span>
+                            <span class="viz-map-stat-lbl">Live Sources</span>
+                        </div>
+                        <div class="viz-map-stat">
+                            <span class="viz-map-stat-val" data-viz="map-total-hits">0</span>
+                            <span class="viz-map-stat-lbl">Total Hits</span>
+                        </div>
+                        <div class="viz-map-stat">
+                            <span class="viz-map-stat-val" data-viz="map-countries">0</span>
+                            <span class="viz-map-stat-lbl">Countries</span>
+                        </div>
+                    </div>
+                    <div class="viz-map-legend">
+                        <div class="viz-legend-item"><span class="viz-legend-dot" style="background:#ff1744"></span> SSH Brute Force</div>
+                        <div class="viz-legend-item"><span class="viz-legend-dot" style="background:#ff9100"></span> Web Probe</div>
+                        <div class="viz-legend-item"><span class="viz-legend-dot" style="background:#ffd600"></span> UFW Block</div>
+                        <div class="viz-legend-item"><span class="viz-legend-dot" style="background:#b388ff"></span> Honeypot</div>
+                        <div class="viz-legend-item"><span class="viz-legend-dot" style="background:#00e5ff"></span> Other</div>
+                    </div>
+                </div>
+                <div class="viz-panel viz-panel-full">
+                    <h3 class="viz-panel-title">Live Attack Feed</h3>
+                    <div class="viz-attack-feed" data-viz="attack-feed">
+                        <div class="viz-empty">Waiting for attacks...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ SUB-PANEL: HONEYPOT ============ -->
+            <div class="viz-subpanel" data-viz-subpanel="honeypot" hidden>
+                <div class="viz-section-header">
+                    <h2 class="viz-section-title">Honeypot Intelligence</h2>
+                    <p class="viz-section-desc">Fake SSH login credentials captured from brute force attackers. Every username and password shown was actually tried by a real attacker against your server.</p>
+                </div>
+                <div class="viz-hp-stats">
+                    <div class="viz-hp-stat">
+                        <span class="viz-hp-stat-val" data-viz="hp-total">--</span>
+                        <span class="viz-hp-stat-lbl">Total Attempts</span>
+                    </div>
+                    <div class="viz-hp-stat">
+                        <span class="viz-hp-stat-val" data-viz="hp-users">--</span>
+                        <span class="viz-hp-stat-lbl">Unique Usernames</span>
+                    </div>
+                    <div class="viz-hp-stat">
+                        <span class="viz-hp-stat-val" data-viz="hp-passwords">--</span>
+                        <span class="viz-hp-stat-lbl">Unique Passwords</span>
+                    </div>
+                    <div class="viz-hp-stat">
+                        <span class="viz-hp-stat-val" data-viz="hp-ips">--</span>
+                        <span class="viz-hp-stat-lbl">Unique Attackers</span>
+                    </div>
+                </div>
+                <div class="viz-two-col">
+                    <div class="viz-panel">
+                        <h3 class="viz-panel-title">Top Usernames Tried</h3>
+                        <div class="viz-scroll-list" data-viz="hp-top-users">
+                            <div class="viz-empty">Loading...</div>
+                        </div>
+                    </div>
+                    <div class="viz-panel">
+                        <h3 class="viz-panel-title">Top Passwords Tried</h3>
+                        <div class="viz-scroll-list" data-viz="hp-top-passwords">
+                            <div class="viz-empty">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="viz-panel viz-panel-full">
+                    <h3 class="viz-panel-title">Live Capture Feed</h3>
+                    <div class="viz-hp-feed" data-viz="hp-feed">
+                        <div class="viz-empty">Loading honeypot events...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ SUB-PANEL: BLOCKLIST ============ -->
+            <div class="viz-subpanel" data-viz-subpanel="blocklist" hidden>
+                <div class="viz-section-header">
+                    <h2 class="viz-section-title">IP Blocklist Manager</h2>
+                    <p class="viz-section-desc">Manually block or unblock IPs via UFW firewall. Blocked IPs are immediately denied all access to your server.</p>
+                </div>
+                <div class="viz-panel">
+                    <h3 class="viz-panel-title">Block an IP Address</h3>
+                    <div class="viz-block-form">
+                        <input type="text" name="threatvizBlockIp" class="viz-block-input" data-viz="block-ip" placeholder="Enter IP address (e.g. 192.168.1.100)" autocomplete="off" spellcheck="false">
+                        <input type="text" name="threatvizBlockReason" class="viz-block-input viz-block-reason" data-viz="block-reason" placeholder="Reason (optional)" autocomplete="off">
+                        <button type="button" class="viz-btn viz-btn-block" data-viz-action="block">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                            </svg>
+                            Block IP
+                        </button>
+                    </div>
+                    <p class="viz-block-result" data-viz="block-result"></p>
+                </div>
+                <div class="viz-panel viz-panel-full">
+                    <div class="viz-panel-head">
+                        <h3 class="viz-panel-title">Currently Blocked IPs</h3>
+                        <span class="viz-blocked-count" data-viz="blocked-count">0 IPs</span>
+                    </div>
+                    <div class="viz-table-wrap">
+                        <table class="viz-blocked-table">
+                            <thead>
+                                <tr>
+                                    <th>IP Address</th>
+                                    <th>Country</th>
+                                    <th>Reason</th>
+                                    <th>Blocked At</th>
+                                    <th>Source</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody data-viz="blocked-tbody">
+                                <tr><td colspan="6" class="viz-empty">Loading blocked IPs...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <p>&copy; 2026 Jonathan Castro. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts: nav first, then shared state bus, then tool modules, then page controller -->
+    <script src="/navigation.js"></script>
+    <script src="/shared.js"></script>
+    <script src="/security-ops/tools/lan-discovery.js"></script>
+    <script src="/security-ops/tools/vuln-scan.js"></script>
+    <script src="/security-ops/tools/net-traffic.js"></script>
+    <script src="/security-ops/tools/siem-logs.js"></script>
+    <script src="/security-ops/tools/threat-viz.js"></script>
+    <script src="/security-ops/scripts.js"></script>
+</body>
+</html>

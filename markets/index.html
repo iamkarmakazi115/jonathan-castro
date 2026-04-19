@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Markets — Jonathan Castro</title>
+    <meta name="description" content="Live markets dashboard — indices, watchlist, and financial news." />
+    <link rel="icon" href="/assets/KarmakazifaviconICO.ico" type="image/x-icon" />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@300;400;500;600;700&amp;family=Rajdhani:wght@400;500;600;700&amp;display=swap" />
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="/navigation.css" />
+    <link rel="stylesheet" href="/markets/styles.css" />
+
+    <!-- Chart.js (featured chart) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body class="markets-page">
+
+    <!-- Navigation hook (navigation.js populates this) -->
+    <div id="nav-placeholder"></div>
+
+    <!-- Connection error banner (hidden by default; JS toggles) -->
+    <div class="markets-conn-error" data-markets="conn-error" role="alert" hidden>
+        <svg class="markets-conn-error-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 2L2 22h20L12 2z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+            <line x1="12" y1="9" x2="12" y2="14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            <circle cx="12" cy="18" r="1.2" fill="currentColor" />
+        </svg>
+        <span>Unable to reach the market data API. Retrying…</span>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- Header: title + last-updated + refresh + tab strip         -->
+    <!-- ======================================================== -->
+    <header class="markets-header">
+        <div class="markets-header-top">
+            <div class="markets-title-block">
+                <h1 class="markets-title">MARKETS</h1>
+                <p class="markets-subtitle">Live indices, watchlist, and financial news</p>
+            </div>
+            <div class="markets-header-meta">
+                <div class="markets-last-updated">
+                    <span class="markets-last-updated-label">LAST UPDATED</span>
+                    <span class="markets-last-updated-time" data-markets="last-updated">--:--:--</span>
+                </div>
+                <button type="button"
+                        class="markets-refresh-btn"
+                        data-markets="refresh-btn"
+                        aria-label="Refresh data">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M21 12a9 9 0 1 1-3-6.7" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                        <polyline points="21 3 21 9 15 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="markets-tabs" role="tablist" aria-label="Markets sections">
+            <button type="button"
+                    class="markets-tab is-active"
+                    role="tab"
+                    aria-selected="true"
+                    tabindex="0"
+                    data-markets-tab="stocks">
+                <span class="markets-tab-num">01</span>
+                <span class="markets-tab-label">Stocks</span>
+            </button>
+            <button type="button"
+                    class="markets-tab"
+                    role="tab"
+                    aria-selected="false"
+                    tabindex="-1"
+                    data-markets-tab="news">
+                <span class="markets-tab-num">02</span>
+                <span class="markets-tab-label">Market News</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- ======================================================== -->
+    <!-- Main panels                                                -->
+    <!-- ======================================================== -->
+    <main class="markets-main">
+
+        <!-- ============================================ -->
+        <!-- STOCKS PANEL                                   -->
+        <!-- ============================================ -->
+        <section class="markets-panel markets-panel-stocks"
+                 data-markets-panel="stocks"
+                 role="tabpanel"
+                 aria-label="Stocks">
+
+            <!-- Indices row: 4 cards -->
+            <div class="markets-indices" aria-label="Major indices">
+                <article class="markets-index-card" data-markets-index="^GSPC">
+                    <div class="markets-index-head">
+                        <span class="markets-index-short">SPX</span>
+                        <span class="markets-index-name">S&amp;P 500</span>
+                    </div>
+                    <div class="markets-index-value" data-markets-index-value>--</div>
+                    <div class="markets-index-change" data-markets-index-change>--</div>
+                </article>
+                <article class="markets-index-card" data-markets-index="^DJI">
+                    <div class="markets-index-head">
+                        <span class="markets-index-short">DOW</span>
+                        <span class="markets-index-name">Dow Jones</span>
+                    </div>
+                    <div class="markets-index-value" data-markets-index-value>--</div>
+                    <div class="markets-index-change" data-markets-index-change>--</div>
+                </article>
+                <article class="markets-index-card" data-markets-index="^IXIC">
+                    <div class="markets-index-head">
+                        <span class="markets-index-short">NDX</span>
+                        <span class="markets-index-name">NASDAQ</span>
+                    </div>
+                    <div class="markets-index-value" data-markets-index-value>--</div>
+                    <div class="markets-index-change" data-markets-index-change>--</div>
+                </article>
+                <article class="markets-index-card" data-markets-index="^RUT">
+                    <div class="markets-index-head">
+                        <span class="markets-index-short">RUT</span>
+                        <span class="markets-index-name">Russell 2000</span>
+                    </div>
+                    <div class="markets-index-value" data-markets-index-value>--</div>
+                    <div class="markets-index-change" data-markets-index-change>--</div>
+                </article>
+            </div>
+
+            <!-- Watchlist section -->
+            <section class="markets-section">
+                <div class="markets-section-head">
+                    <h2 class="markets-section-title">Watchlist</h2>
+                    <span class="markets-section-count" data-markets="watchlist-count">0 / 50</span>
+                </div>
+
+                <!-- Watchlist controls row -->
+                <div class="watchlist-controls">
+                    <label class="watchlist-add">
+                        <span class="watchlist-add-label">ADD SYMBOL</span>
+                        <input type="text"
+                               class="watchlist-add-input"
+                               data-markets="add-input"
+                               placeholder="e.g. ORCL"
+                               maxlength="5"
+                               autocomplete="off"
+                               spellcheck="false"
+                               aria-label="Add symbol to watchlist" />
+                    </label>
+                    <button type="button"
+                            class="btn btn-primary btn-sm"
+                            data-markets="add-btn">Add</button>
+                    <button type="button"
+                            class="btn btn-ghost btn-sm"
+                            data-markets="reset-btn">Reset to Defaults</button>
+                    <span class="watchlist-status"
+                          data-markets="add-status"
+                          role="status"
+                          aria-live="polite"></span>
+                </div>
+
+                <!-- Watchlist table -->
+                <div class="stocks-table-wrap">
+                    <table class="stocks-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Symbol</th>
+                                <th scope="col">Name</th>
+                                <th scope="col" class="stocks-col-num">Price</th>
+                                <th scope="col" class="stocks-col-num">Change</th>
+                                <th scope="col" class="stocks-col-num">Change %</th>
+                                <th scope="col" class="stocks-col-num">Volume</th>
+                                <th scope="col" class="stocks-col-num">Day High</th>
+                                <th scope="col" class="stocks-col-num">Day Low</th>
+                                <th scope="col" class="stocks-col-remove">
+                                    <span class="sr-only">Remove</span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody data-markets="stocks-tbody">
+                            <tr class="stocks-empty-row">
+                                <td colspan="9" class="stocks-empty">Loading watchlist…</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p class="stocks-hint">Click any row to open the chart.</p>
+            </section>
+
+            <!-- Featured chart panel (hidden until a row is clicked) -->
+            <section class="featured-chart"
+                     data-markets="featured"
+                     aria-label="Featured chart"
+                     hidden>
+                <header class="featured-head">
+                    <div class="featured-head-left">
+                        <div class="featured-symbol" data-markets="featured-symbol">—</div>
+                        <div class="featured-name" data-markets="featured-name">—</div>
+                    </div>
+                    <div class="featured-head-center">
+                        <div class="featured-price" data-markets="featured-price">--</div>
+                        <div class="featured-change" data-markets="featured-change">--</div>
+                    </div>
+                    <div class="featured-head-right">
+                        <div class="featured-ranges" role="group" aria-label="Time range">
+                            <button type="button"
+                                    class="featured-range-btn is-active"
+                                    data-markets-range="1D">1D</button>
+                            <button type="button"
+                                    class="featured-range-btn"
+                                    data-markets-range="1M">1M</button>
+                            <button type="button"
+                                    class="featured-range-btn"
+                                    data-markets-range="1Y">1Y</button>
+                            <button type="button"
+                                    class="featured-range-btn"
+                                    data-markets-range="5Y">5Y</button>
+                        </div>
+                        <button type="button"
+                                class="featured-close"
+                                data-markets="featured-close"
+                                aria-label="Close chart">×</button>
+                    </div>
+                </header>
+                <div class="featured-body">
+                    <div class="featured-loading" data-markets="featured-loading" hidden>
+                        <span class="featured-spinner" aria-hidden="true"></span>
+                        <span>Loading chart data…</span>
+                    </div>
+                    <div class="featured-chart-err"
+                         data-markets="featured-chart-err"
+                         role="alert"
+                         hidden></div>
+                    <div class="featured-canvas-wrap">
+                        <canvas data-markets="featured-canvas"
+                                aria-label="Price chart"></canvas>
+                    </div>
+                </div>
+            </section>
+        </section>
+
+        <!-- ============================================ -->
+        <!-- NEWS PANEL (hidden by default)                 -->
+        <!-- ============================================ -->
+        <section class="markets-panel markets-panel-news"
+                 data-markets-panel="news"
+                 role="tabpanel"
+                 aria-label="Market News"
+                 hidden>
+            <div class="news-head">
+                <h2 class="markets-section-title">Market News</h2>
+                <button type="button"
+                        class="btn btn-ghost btn-sm"
+                        data-markets="news-refresh">Refresh</button>
+            </div>
+
+            <!-- JS populates chips including "All" + each live source -->
+            <div class="news-chips"
+                 data-markets="news-chips"
+                 role="group"
+                 aria-label="News source filter"></div>
+
+            <!-- JS populates article cards -->
+            <div class="news-feed" data-markets="news-feed">
+                <div class="news-loading">Loading articles…</div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ======================================================== -->
+    <!-- Footer                                                     -->
+    <!-- ======================================================== -->
+    <footer class="markets-footer">
+        <span class="markets-footer-meta">Markets Dashboard v1.0</span>
+        <span class="markets-footer-sep" aria-hidden="true">•</span>
+        <span class="markets-footer-meta">
+            Auto-refresh: <span data-markets="refresh-interval">30s</span>
+        </span>
+        <span class="markets-footer-sep" aria-hidden="true">•</span>
+        <span class="markets-footer-meta">Data via Yahoo Finance</span>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="/navigation.js"></script>
+    <script src="/markets/scripts.js"></script>
+</body>
+</html>
